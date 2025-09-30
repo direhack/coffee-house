@@ -1,12 +1,12 @@
 body {
   margin: 0 auto;
   text-align: center;
+  background-color: #e1d4c9;
 }
 
 .container {
   max-width: 1440px;
   margin: 0 auto;
-  background-color: #e1d4c9;
 }
 
 header {
@@ -79,32 +79,76 @@ main .hero .block button {
 main .hero .block button:hover {
   cursor: pointer;
 }
-main .slider {
+main .fav_coffee {
   height: 799px;
 }
-main .slider h2 {
+main .fav_coffee h2 {
   color: #403f3d;
   font-size: 50px;
 }
-main .slider h2 span {
+main .fav_coffee h2 span {
   color: #b0907a;
 }
-main .slider .drink {
+main .fav_coffee .slider {
   display: flex;
-  justify-content: space-between;
+  justify-content: space-around;
   align-items: center;
-  flex-wrap: wrap;
 }
-main .slider .drink .arrow-right,
-main .slider .drink .arrow-left {
+main .fav_coffee .slider .arrow-right,
+main .fav_coffee .slider .arrow-left {
   border: 1px solid #665f55;
   border-radius: 50%;
   padding: 10px;
+  color: #665f55;
 }
-main .slider .drink .arrow-right:hover,
-main .slider .drink .arrow-left:hover {
+main .fav_coffee .slider .arrow-right:hover,
+main .fav_coffee .slider .arrow-left:hover {
   cursor: pointer;
+  background-color: #665f55;
+  color: #e1d4c9;
 }
-main .slider .drink-info {
+main .fav_coffee .slider .drink {
+  transition: opacity 500ms ease;
+  width: 480px;
+  height: 640px;
+  display: flex;
+  flex-direction: column;
+}
+main .about .images {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-auto-rows: 180px;
+  gap: 40px;
+}
+main .about .images .image {
   width: 100%;
+  height: 100%;
+  -o-object-fit: cover;
+     object-fit: cover;
+  border-radius: 14px;
+  display: block;
+}
+main .about .images .a {
+  grid-column: 1;
+  grid-row: 1/span 2;
+}
+main .about .images .b {
+  grid-column: 2;
+  grid-row: 1;
+}
+main .about .images .c {
+  grid-column: 1;
+  grid-row: 3;
+}
+main .about .images .e {
+  grid-column: 2;
+  grid-row: 2/span 2;
+}
+
+.fa-minus {
+  color: #c1b6ad;
+}
+
+.active {
+  color: #665f55;
 }/*# sourceMappingURL=style.css.map */
