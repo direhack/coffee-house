@@ -1,12 +1,46 @@
-let drink = document.querySelector(".drink");
-let left_button = document.querySelector(".arrow-left");
-let right_button = document.querySelector(".arrow-right");
+const drink = document.querySelector(".drink"),
+	left_button = document.querySelector(".arrow-left"),
+	right_button = document.querySelector(".arrow-right"),
+	menu_link = document.querySelector(".menu_link"),
+	links = document.querySelectorAll(".link"),
+	home = document.querySelector(".home"),
+	menu = document.querySelector(".menu"),
+	coffee = document.querySelector(".coffee"),
+	tea = document.querySelector(".tea"),
+	dessert = document.querySelector(".dessert"),
+	buttons = document.querySelectorAll(".button"),
+	coffee_src = [],
+	tea_src = [],
+	dessert_src = [],
+	content = document.querySelector(".content");
 let current = 0;
+
+async function getProducts() {
+	try {
+		const response = await fetch("/products.json");
+		if (!response.ok) {
+			throw new Error("Network response was not ok");
+		}
+		const data = await response.json();
+	} catch (error) {
+		console.error("Error fetching data:", error);
+	}
+}
+
+getProducts();
 
 let drinks = [];
 
 for (let i = 1; i <= 3; i++) {
 	drinks.push(`/assets/coffee-slider-${i}.png`);
+}
+
+for (let i = 1; i <= 8; i++) {
+	coffee_src.push(`/assets/coffee-${i}.jpg`);
+	dessert_src.push(`/assets/dessert-${i}.png`);
+}
+for (let i = 1; i <= 4; i++) {
+	tea_src.push(`/assets/tea-${i}.png`);
 }
 
 function createImage() {
@@ -95,5 +129,41 @@ right_button.addEventListener("click", () => {
 	clearInterval(changeCoffeeInterval);
 });
 
-changeCoffee();
+menu_link.addEventListener("click", () => {
+	menu_link.style.borderBottom = "2px solid #403f3d";
+	home.style.display = "none";
+	menu.style.display = "block";
+	coffee.click();
+});
 
+links.forEach((link, i) => {
+	link.addEventListener("click", () => {
+		if (i !== 3) {
+			menu_link.style.borderBottom = "none";
+			home.style.display = "block";
+			menu.style.display = "none";
+		}
+	});
+});
+
+buttons.forEach((btn) => {
+	btn.addEventListener("click", () => {
+		buttons.forEach((b) => {
+			b.classList.remove("clicked");
+			content.innerHTML = "";
+		});
+		btn.classList.add("clicked");
+	});
+});
+
+coffee.addEventListener("click", () => {
+	coffee_src.forEach((coffee, i) => {
+		let img = document.createElement("img");
+		img.src = coffee;
+		console.log(coffee);
+		img.alt = `coffee-${i}`;
+		content.appendChild(img);
+	});
+});
+
+changeCoffee();
