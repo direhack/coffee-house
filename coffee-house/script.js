@@ -12,8 +12,10 @@ const drink = document.querySelector(".drink"),
 	coffee_src = [],
 	tea_src = [],
 	dessert_src = [],
-	content = document.querySelector(".content");
-let current = 0;
+	content = document.querySelector(".content"),
+	button = document.querySelector(".home button");
+let current = 0,
+	data = [];
 
 async function getProducts() {
 	try {
@@ -21,13 +23,11 @@ async function getProducts() {
 		if (!response.ok) {
 			throw new Error("Network response was not ok");
 		}
-		const data = await response.json();
+		data = await response.json();
 	} catch (error) {
 		console.error("Error fetching data:", error);
 	}
 }
-
-getProducts();
 
 let drinks = [];
 
@@ -115,6 +115,13 @@ function fadeSwap(renderFn) {
 
 let changeCoffeeInterval = setInterval(() => changeCoffee(true), 5000);
 
+button.addEventListener("click", () => {
+	menu_link.style.borderBottom = "2px solid #403f3d";
+	home.style.display = "none";
+	menu.style.display = "block";
+	coffee.click();
+});
+
 left_button.addEventListener("click", () => {
 	current--;
 	if (current < 0) current = 2;
@@ -138,7 +145,7 @@ menu_link.addEventListener("click", () => {
 
 links.forEach((link, i) => {
 	link.addEventListener("click", () => {
-		if (i !== 3) {
+		if (i !== 4) {
 			menu_link.style.borderBottom = "none";
 			home.style.display = "block";
 			menu.style.display = "none";
@@ -150,20 +157,106 @@ buttons.forEach((btn) => {
 	btn.addEventListener("click", () => {
 		buttons.forEach((b) => {
 			b.classList.remove("clicked");
-			content.innerHTML = "";
 		});
 		btn.classList.add("clicked");
 	});
 });
 
 coffee.addEventListener("click", () => {
+	getProducts();
+
+	content.innerHTML = "";
+	data = data.filter((el) => el.category === "coffee");
 	coffee_src.forEach((coffee, i) => {
 		let img = document.createElement("img");
+		let name = document.createElement("h3");
+		let description = document.createElement("p");
+		let block = document.createElement("div");
+		let info_block = document.createElement("div");
+		block.classList.add("block");
+		info_block.classList.add("info_block");
+		let price = document.createElement("p");
+		price.classList.add("price");
+
+		name.textContent = `${data[i].name}`;
+		description.textContent = `${data[i].description}`;
+		price.textContent = `$${data[i].price}`;
 		img.src = coffee;
-		console.log(coffee);
 		img.alt = `coffee-${i}`;
-		content.appendChild(img);
+
+		block.appendChild(img);
+		info_block.appendChild(name);
+		info_block.appendChild(description);
+		info_block.appendChild(price);
+		block.appendChild(info_block);
+
+		content.appendChild(block);
+	});
+});
+
+tea.addEventListener("click", () => {
+	getProducts();
+
+	content.innerHTML = "";
+	data = data.filter((el) => el.category === "tea");
+	tea_src.forEach((tea, i) => {
+		let img = document.createElement("img");
+		let name = document.createElement("h3");
+		let description = document.createElement("p");
+		let block = document.createElement("div");
+		let info_block = document.createElement("div");
+		block.classList.add("block");
+		info_block.classList.add("info_block");
+		let price = document.createElement("p");
+		price.classList.add("price");
+
+		name.textContent = `${data[i].name}`;
+		description.textContent = `${data[i].description}`;
+		price.textContent = `$${data[i].price}`;
+		img.src = tea;
+		img.alt = `tea-${i}`;
+
+		block.appendChild(img);
+		info_block.appendChild(name);
+		info_block.appendChild(description);
+		info_block.appendChild(price);
+		block.appendChild(info_block);
+
+		content.appendChild(block);
+	});
+});
+
+dessert.addEventListener("click", () => {
+	getProducts();
+
+	content.innerHTML = "";
+	data = data.filter((el) => el.category === "dessert");
+	dessert_src.forEach((dessert, i) => {
+		let img = document.createElement("img");
+		let name = document.createElement("h3");
+		let description = document.createElement("p");
+		let block = document.createElement("div");
+		let info_block = document.createElement("div");
+		block.classList.add("block");
+		info_block.classList.add("info_block");
+		let price = document.createElement("p");
+		price.classList.add("price");
+
+		name.textContent = `${data[i].name}`;
+		description.textContent = `${data[i].description}`;
+		price.textContent = `$${data[i].price}`;
+		img.src = dessert;
+		img.alt = `dessert-${i}`;
+
+		block.appendChild(img);
+		info_block.appendChild(name);
+		info_block.appendChild(description);
+		info_block.appendChild(price);
+		block.appendChild(info_block);
+
+		content.appendChild(block);
 	});
 });
 
 changeCoffee();
+getProducts();
