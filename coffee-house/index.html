@@ -9,6 +9,12 @@
 			src="https://kit.fontawesome.com/4fb972d105.js"
 			crossorigin="anonymous"
 		></script>
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<link
+			href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap"
+			rel="stylesheet"
+		/>
 	</head>
 	<body>
 		<div class="container">
@@ -16,18 +22,19 @@
 				<img src="assets/logo.png" alt="logo" class="logo" />
 				<nav>
 					<ul>
-						<li><a href="#fav_coffee">Favorite coffee</a></li>
-						<li><a href="#about">About</a></li>
-						<li><a href="#mob_app">Mobile app</a></li>
-						<li><a href="#contact">Contact us</a></li>
+						<li>
+							<a class="link" href="#fav_coffee">Favorite coffee</a>
+						</li>
+						<li><a class="link" href="#about">About</a></li>
+						<li><a class="link" href="#mob_app">Mobile app</a></li>
+						<li><a class="link" href="#contact">Contact us</a></li>
 					</ul>
 				</nav>
-				<a href="menu.html" class="menu"
-					>Menu <i class="fa-solid fa-mug-hot"></i
-				></a>
+				<a class="menu_link">Menu <i class="fa-solid fa-mug-hot"></i></a>
+				<i class="fa-solid fa-bars"></i>
 			</header>
 
-			<main>
+			<main class="home">
 				<section class="hero">
 					<div class="block">
 						<h1>
@@ -106,6 +113,31 @@
 						<img src="assets/mobile-screens.png" alt="mobile-screens" />
 					</div>
 				</section>
+			</main>
+
+			<main class="menu">
+				<h1>
+					Behind each of our cups <br />
+					hides an <span>amazing surprise</span>
+				</h1>
+				<div class="buttons">
+					<div class="button coffee">
+						<img src="assets/coffee.png" alt="" />
+						<p>Coffee</p>
+					</div>
+					<div class="button tea">
+						<img src="assets/tea.png" alt="" />
+						<p>Tea</p>
+					</div>
+					<div class="button dessert">
+						<img src="assets/dessert.png" alt="" />
+						<p>Dessert</p>
+					</div>
+				</div>
+				<div class="content"></div>
+			</main>
+
+			<footer>
 				<section class="contact" id="contact">
 					<div class="first_block">
 						<h2>Sip, Savor, Smile. <span>It's coffee time!</span></h2>
@@ -131,7 +163,7 @@
 						</div>
 					</div>
 				</section>
-			</main>
+			</footer>
 		</div>
 		<script src="script.js"></script>
 	</body>
