@@ -39,6 +39,8 @@ let current = 0,
 	data = [],
 	blocks = [];
 
+current_product.adds = [];
+
 async function getProducts() {
 	try {
 		const response = await fetch("/products.json");
@@ -293,6 +295,9 @@ content.addEventListener("contentchange", () => {
 			backdrop.style.display = "block";
 			modal.style.display = "flex";
 
+			button_S.classList.add("modal_button_active");
+			current_product.size = "s";
+
 			modal_photo.src = block.querySelector("img").src;
 			modal_photo.alt = `modal-photo-${i}`;
 
@@ -337,113 +342,77 @@ content.addEventListener("contentchange", () => {
 [button_first_additive, button_second_additive, button_third_additive].forEach(
 	(btn) => {
 		btn.addEventListener("click", () => {
-			[
-				button_first_additive,
-				button_second_additive,
-				button_third_additive,
-			].forEach((b) => {
-				b.classList.remove("modal_button_active");
-			});
-			btn.classList.add("modal_button_active");
+			btn.classList.toggle("modal_button_active");
 		});
 	}
 );
 
-button_S.addEventListener("click", () => {
-	current_product.size = "s";
+const updateTotal = () => {
+	const item = data[current_product.index];
+
+	const base = parseFloat(item.price);
+	const sizeAdd = parseFloat(item.sizes[current_product.size]["add-price"]);
+
+	const addsSum = current_product.adds.reduce(
+		(s, i) => s + parseFloat(item.additives[i]["add-price"]),
+		0
+	);
+
+	const total = base + sizeAdd + addsSum;
+	total_price.textContent = `$${total.toFixed(2)}`;
+};
+
+const filter = () => {
 	if (current_product.type === "coffee")
 		data = data.filter((el) => el.category === "coffee");
 	else if (current_product.type === "tea")
 		data = data.filter((el) => el.category === "tea");
 	else if (current_product.type === "dessert")
 		data = data.filter((el) => el.category === "dessert");
-	total_price.textContent = `$${
-		parseFloat(data[current_product.index].price) +
-		parseFloat(data[current_product.index].sizes.s["add-price"])
-	}`;
-	console.log(data[current_product.index].sizes.s["add-price"]);
+};
+
+const additiveFilter = (num) => {
+	if (current_product.adds.includes(num))
+		current_product.adds = current_product.adds.filter(
+			(additive) => additive !== num
+		);
+	else {
+		current_product.adds.push(num);
+	}
+};
+
+button_S.addEventListener("click", () => {
+	current_product.size = "s";
+	filter();
+	updateTotal();
 });
 
 button_M.addEventListener("click", () => {
 	current_product.size = "m";
-	if (current_product.type === "coffee")
-		data = data.filter((el) => el.category === "coffee");
-	else if (current_product.type === "tea")
-		data = data.filter((el) => el.category === "tea");
-	else if (current_product.type === "dessert")
-		data = data.filter((el) => el.category === "dessert");
-
-	total_price.textContent = `$${
-		parseFloat(data[current_product.index].price) +
-		parseFloat(data[current_product.index].sizes.m["add-price"])
-	}`;
-	console.log(data[current_product.index].sizes.m["add-price"]);
+	filter();
+	updateTotal();
 });
 
 button_L.addEventListener("click", () => {
 	current_product.size = "l";
-	if (current_product.type === "coffee")
-		data = data.filter((el) => el.category === "coffee");
-	else if (current_product.type === "tea")
-		data = data.filter((el) => el.category === "tea");
-	else if (current_product.type === "dessert")
-		data = data.filter((el) => el.category === "dessert");
-
-	total_price.textContent = `$${
-		parseFloat(data[current_product.index].price) +
-		parseFloat(data[current_product.index].sizes.l["add-price"])
-	}`;
-	console.log(data[current_product.index].sizes.l["add-price"]);
+	filter();
+	updateTotal();
 });
 
 button_first_additive.addEventListener("click", () => {
-	if (current_product.type === "coffee")
-		data = data.filter((el) => el.category === "coffee");
-	else if (current_product.type === "tea")
-		data = data.filter((el) => el.category === "tea");
-	else if (current_product.type === "dessert")
-		data = data.filter((el) => el.category === "dessert");
-
-	total_price.textContent = `$${
-		parseFloat(data[current_product.index].price) +
-		parseFloat(
-			data[current_product.index].sizes[current_product.size]["add-price"]
-		) +
-		parseFloat(data[current_product.index].additives[0]["add-price"])
-	}`;
-	console.log(data[current_product.index].additives[0]["add-price"]);
+	filter();
+	additiveFilter(0);
+	updateTotal();
 });
 button_second_additive.addEventListener("click", () => {
-	if (current_product.type === "coffee")
-		data = data.filter((el) => el.category === "coffee");
-	else if (current_product.type === "tea")
-		data = data.filter((el) => el.category === "tea");
-	else if (current_product.type === "dessert")
-		data = data.filter((el) => el.category === "dessert");
-	total_price.textContent = `$${
-		parseFloat(data[current_product.index].price) +
-		parseFloat(
-			data[current_product.index].sizes[current_product.size]["add-price"]
-		) +
-		parseFloat(data[current_product.index].additives[1]["add-price"])
-	}`;
-	console.log(data[current_product.index].additives[1]["add-price"]);
+	filter();
+	additiveFilter(1);
+	updateTotal();
 });
 button_third_additive.addEventListener("click", () => {
-	if (current_product.type === "coffee")
-		data = data.filter((el) => el.category === "coffee");
-	else if (current_product.type === "tea")
-		data = data.filter((el) => el.category === "tea");
-	else if (current_product.type === "dessert")
-		data = data.filter((el) => el.category === "dessert");
-	total_price.textContent = `$${
-		parseFloat(data[current_product.index].price) +
-		parseFloat(
-			data[current_product.index].sizes[current_product.size]["add-price"]
-		) +
-		parseFloat(data[current_product.index].additives[2]["add-price"])
-	}`;
-	console.log(data[current_product.index].additives[2]["add-price"]);
+	filter();
+	additiveFilter(2);
+	updateTotal();
 });
 
 close.addEventListener("click", () => {
@@ -461,6 +430,8 @@ close.addEventListener("click", () => {
 	].forEach((btn) => {
 		btn.classList.remove("modal_button_active");
 	});
+
+	getProducts();
 });
 
 changeCoffee();
