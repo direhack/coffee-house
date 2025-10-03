@@ -13,9 +13,31 @@ const drink = document.querySelector(".drink"),
 	tea_src = [],
 	dessert_src = [],
 	content = document.querySelector(".content"),
-	button = document.querySelector(".home button");
+	button = document.querySelector(".home button"),
+	close = document.querySelector(".close"),
+	backdrop = document.querySelector(".backdrop"),
+	modal = document.querySelector(".modal"),
+	modal_photo = document.querySelector(".modal_photo"),
+	modal_name = document.querySelector(".modal .name"),
+	modal_description = document.querySelector(".modal .description"),
+	S = document.querySelector(".modal .size_s"),
+	M = document.querySelector(".modal .size_m"),
+	L = document.querySelector(".modal .size_l"),
+	button_S = document.querySelector(".modal .small"),
+	button_M = document.querySelector(".modal .medium"),
+	button_L = document.querySelector(".modal .large"),
+	first_additive = document.querySelector(".modal .first_additive"),
+	second_additive = document.querySelector(".modal .second_additive"),
+	third_additive = document.querySelector(".modal .third_additive"),
+	button_first_additive = document.querySelector(".modal .first"),
+	button_second_additive = document.querySelector(".modal .second"),
+	button_third_additive = document.querySelector(".modal .third"),
+	total_price = document.querySelector(".modal .total_price"),
+	current_product = {};
+
 let current = 0,
-	data = [];
+	data = [],
+	blocks = [];
 
 async function getProducts() {
 	try {
@@ -166,6 +188,7 @@ coffee.addEventListener("click", () => {
 	getProducts();
 
 	content.innerHTML = "";
+
 	data = data.filter((el) => el.category === "coffee");
 	coffee_src.forEach((coffee, i) => {
 		let img = document.createElement("img");
@@ -192,6 +215,7 @@ coffee.addEventListener("click", () => {
 
 		content.appendChild(block);
 	});
+	content.dispatchEvent(new Event("contentchange"));
 });
 
 tea.addEventListener("click", () => {
@@ -224,6 +248,7 @@ tea.addEventListener("click", () => {
 
 		content.appendChild(block);
 	});
+	content.dispatchEvent(new Event("contentchange"));
 });
 
 dessert.addEventListener("click", () => {
@@ -255,6 +280,186 @@ dessert.addEventListener("click", () => {
 		block.appendChild(info_block);
 
 		content.appendChild(block);
+	});
+	content.dispatchEvent(new Event("contentchange"));
+});
+
+content.addEventListener("contentchange", () => {
+	blocks = document.querySelectorAll(".block");
+
+	blocks.forEach((block, i) => {
+		block.addEventListener("click", () => {
+			document.body.classList.add("modal-open");
+			backdrop.style.display = "block";
+			modal.style.display = "flex";
+
+			modal_photo.src = block.querySelector("img").src;
+			modal_photo.alt = `modal-photo-${i}`;
+
+			if (modal_photo.src.includes("coffee"))
+				(data = data.filter((el) => el.category === "coffee")),
+					(current_product.type = "coffee");
+			else if (modal_photo.src.includes("tea"))
+				(data = data.filter((el) => el.category === "tea")),
+					(current_product.type = "tea");
+			else if (modal_photo.src.includes("dessert"))
+				(data = data.filter((el) => el.category === "dessert")),
+					(current_product.type = "dessert");
+
+			current_product.index = i;
+			modal_name.textContent = `${data[i].name}`;
+			modal_description.textContent = `${data[i].description}`;
+
+			S.textContent = `${data[i].sizes.s.size}`;
+			M.textContent = `${data[i].sizes.m.size}`;
+			L.textContent = `${data[i].sizes.l.size}`;
+
+			first_additive.textContent = `${data[i].additives[0].name}`;
+			second_additive.textContent = `${data[i].additives[1].name}`;
+			third_additive.textContent = `${data[i].additives[2].name}`;
+
+			total_price.textContent = `$${data[i].price}`;
+
+			getProducts();
+		});
+	});
+});
+
+[button_S, button_M, button_L].forEach((btn) => {
+	btn.addEventListener("click", () => {
+		[button_S, button_M, button_L].forEach((b) => {
+			b.classList.remove("modal_button_active");
+		});
+		btn.classList.add("modal_button_active");
+	});
+});
+
+[button_first_additive, button_second_additive, button_third_additive].forEach(
+	(btn) => {
+		btn.addEventListener("click", () => {
+			[
+				button_first_additive,
+				button_second_additive,
+				button_third_additive,
+			].forEach((b) => {
+				b.classList.remove("modal_button_active");
+			});
+			btn.classList.add("modal_button_active");
+		});
+	}
+);
+
+button_S.addEventListener("click", () => {
+	current_product.size = "s";
+	if (current_product.type === "coffee")
+		data = data.filter((el) => el.category === "coffee");
+	else if (current_product.type === "tea")
+		data = data.filter((el) => el.category === "tea");
+	else if (current_product.type === "dessert")
+		data = data.filter((el) => el.category === "dessert");
+	total_price.textContent = `$${
+		parseFloat(data[current_product.index].price) +
+		parseFloat(data[current_product.index].sizes.s["add-price"])
+	}`;
+	console.log(data[current_product.index].sizes.s["add-price"]);
+});
+
+button_M.addEventListener("click", () => {
+	current_product.size = "m";
+	if (current_product.type === "coffee")
+		data = data.filter((el) => el.category === "coffee");
+	else if (current_product.type === "tea")
+		data = data.filter((el) => el.category === "tea");
+	else if (current_product.type === "dessert")
+		data = data.filter((el) => el.category === "dessert");
+
+	total_price.textContent = `$${
+		parseFloat(data[current_product.index].price) +
+		parseFloat(data[current_product.index].sizes.m["add-price"])
+	}`;
+	console.log(data[current_product.index].sizes.m["add-price"]);
+});
+
+button_L.addEventListener("click", () => {
+	current_product.size = "l";
+	if (current_product.type === "coffee")
+		data = data.filter((el) => el.category === "coffee");
+	else if (current_product.type === "tea")
+		data = data.filter((el) => el.category === "tea");
+	else if (current_product.type === "dessert")
+		data = data.filter((el) => el.category === "dessert");
+
+	total_price.textContent = `$${
+		parseFloat(data[current_product.index].price) +
+		parseFloat(data[current_product.index].sizes.l["add-price"])
+	}`;
+	console.log(data[current_product.index].sizes.l["add-price"]);
+});
+
+button_first_additive.addEventListener("click", () => {
+	if (current_product.type === "coffee")
+		data = data.filter((el) => el.category === "coffee");
+	else if (current_product.type === "tea")
+		data = data.filter((el) => el.category === "tea");
+	else if (current_product.type === "dessert")
+		data = data.filter((el) => el.category === "dessert");
+
+	total_price.textContent = `$${
+		parseFloat(data[current_product.index].price) +
+		parseFloat(
+			data[current_product.index].sizes[current_product.size]["add-price"]
+		) +
+		parseFloat(data[current_product.index].additives[0]["add-price"])
+	}`;
+	console.log(data[current_product.index].additives[0]["add-price"]);
+});
+button_second_additive.addEventListener("click", () => {
+	if (current_product.type === "coffee")
+		data = data.filter((el) => el.category === "coffee");
+	else if (current_product.type === "tea")
+		data = data.filter((el) => el.category === "tea");
+	else if (current_product.type === "dessert")
+		data = data.filter((el) => el.category === "dessert");
+	total_price.textContent = `$${
+		parseFloat(data[current_product.index].price) +
+		parseFloat(
+			data[current_product.index].sizes[current_product.size]["add-price"]
+		) +
+		parseFloat(data[current_product.index].additives[1]["add-price"])
+	}`;
+	console.log(data[current_product.index].additives[1]["add-price"]);
+});
+button_third_additive.addEventListener("click", () => {
+	if (current_product.type === "coffee")
+		data = data.filter((el) => el.category === "coffee");
+	else if (current_product.type === "tea")
+		data = data.filter((el) => el.category === "tea");
+	else if (current_product.type === "dessert")
+		data = data.filter((el) => el.category === "dessert");
+	total_price.textContent = `$${
+		parseFloat(data[current_product.index].price) +
+		parseFloat(
+			data[current_product.index].sizes[current_product.size]["add-price"]
+		) +
+		parseFloat(data[current_product.index].additives[2]["add-price"])
+	}`;
+	console.log(data[current_product.index].additives[2]["add-price"]);
+});
+
+close.addEventListener("click", () => {
+	document.body.classList.remove("modal-open");
+	backdrop.style.display = "none";
+	modal.style.display = "none";
+
+	[
+		button_S,
+		button_M,
+		button_L,
+		button_first_additive,
+		button_second_additive,
+		button_third_additive,
+	].forEach((btn) => {
+		btn.classList.remove("modal_button_active");
 	});
 });
 
