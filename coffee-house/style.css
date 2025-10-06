@@ -1,12 +1,12 @@
 html {
   scroll-behavior: smooth;
-  overflow-x: hidden;
 }
 
 body {
   text-align: center;
   background-color: #e1d4c9;
   font-family: "Inter", sans-serif;
+  overflow-x: hidden;
 }
 
 .container {
@@ -22,12 +22,31 @@ header {
   padding-top: 20px;
   padding-bottom: 20px;
 }
-header .fa-bars {
+header .burger {
+  position: relative;
+  width: 28px;
+  height: 28px;
   display: none;
+  cursor: pointer;
+}
+@media only screen and (max-width: 768px) {
+  header .burger {
+    display: block;
+  }
+}
+header .burger i {
+  position: absolute;
+  inset: 0;
+  transition: opacity 0.25s ease, transform 1s ease;
+}
+header .fa-bars {
+  opacity: 0;
+  pointer-events: auto;
 }
 @media only screen and (max-width: 768px) {
   header .fa-bars {
-    display: block;
+    opacity: 1;
+    transform: rotate(0) scale(1);
   }
   header .fa-bars:hover {
     cursor: pointer;
@@ -39,7 +58,9 @@ header .fa-bars {
   }
 }
 header .fa-xmark {
-  display: none;
+  opacity: 0;
+  transform: rotate(-90deg) scale(0.5);
+  pointer-events: none;
 }
 header .fa-xmark:hover {
   cursor: pointer;
@@ -95,11 +116,15 @@ header .menu_link {
 }
 
 header.menu-open .fa-bars {
-  display: none;
+  opacity: 0;
+  transform: rotate(90deg) scale(0.5);
+  pointer-events: none;
 }
 
 header.menu-open .fa-xmark {
-  display: block;
+  opacity: 1;
+  transform: rotate(0) scale(1);
+  pointer-events: auto;
 }
 
 ul {
