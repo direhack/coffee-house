@@ -106,7 +106,6 @@ function createDrinkPrice() {
 
 function changeActive(isInterval) {
 	let lines = [".first_line", ".second_line", ".third_line"];
-	if (isInterval) lines = lines.reverse();
 	lines.forEach((sel) => {
 		document.querySelector(sel).classList.remove("active");
 	});
@@ -115,7 +114,7 @@ function changeActive(isInterval) {
 
 function changeCoffee(isInterval, direction = "left") {
 	if (isInterval) {
-		current < 2 ? current++ : (current = 0);
+		current = current > 0 ? current - 1 : 2;
 	}
 	render(isInterval);
 	playCycle(direction);
@@ -196,12 +195,13 @@ right_button.addEventListener("click", () => {
 
 button.addEventListener("click", () => menu_link.click());
 
+main = document.querySelector("main");
+backup = Array.from(main.childNodes);
+
 menu_link.addEventListener("click", () => {
 	menu_link.style.borderBottom = "2px solid #403f3d";
 	cross.click();
 
-	main = document.querySelector("main");
-	backup = Array.from(main.childNodes);
 	const h1 = document.createElement("h1");
 	const buttons = document.createElement("div");
 	const content = document.createElement("div");
@@ -387,6 +387,7 @@ menu_link.addEventListener("click", () => {
 links.forEach((link, i) => {
 	link.addEventListener("click", () => {
 		if (i !== 4) {
+			if (i === 0) cross.click();
 			menu_link.style.borderBottom = "";
 			main.classList.remove("menu");
 			main.classList.add("home");
@@ -410,6 +411,13 @@ burger_menu_links.forEach((link, i) => {
 			cross.click();
 		}
 	});
+});
+
+window.matchMedia("(min-width: 768px)").addEventListener("change", (e) => {
+	if (e.matches) {
+		burger_menu.classList.remove("is-open");
+		header.classList.remove("menu-open");
+	}
 });
 
 bars.addEventListener("click", () => {
@@ -506,6 +514,8 @@ button_third_additive.addEventListener("click", () => {
 	additiveFilter(2);
 	updateTotal();
 });
+
+backdrop.addEventListener("click", () => close.click());
 
 close.addEventListener("click", () => {
 	document.body.classList.remove("modal-open");
