@@ -1,5 +1,6 @@
 html {
   scroll-behavior: smooth;
+  overflow-x: hidden;
 }
 
 body {
@@ -28,11 +29,20 @@ header .fa-bars {
   header .fa-bars {
     display: block;
   }
+  header .fa-bars:hover {
+    cursor: pointer;
+  }
 }
 @media only screen and (max-width: 768px) {
   header nav {
     display: none;
   }
+}
+header .fa-xmark {
+  display: none;
+}
+header .fa-xmark:hover {
+  cursor: pointer;
 }
 header ul {
   display: flex;
@@ -63,6 +73,35 @@ header .menu_link {
   }
 }
 
+.burger-menu {
+  position: absolute;
+  transition: 1s;
+  transform: translateX(100%);
+  background-color: #e1d4c9;
+  width: 100%;
+  z-index: 1;
+}
+.burger-menu a {
+  color: #403f3d;
+  border-bottom: 2px solid transparent;
+}
+.burger-menu a:hover {
+  border-bottom-color: #403f3d;
+  cursor: pointer;
+}
+
+.burger-menu.is-open {
+  transform: translateX(0);
+}
+
+header.menu-open .fa-bars {
+  display: none;
+}
+
+header.menu-open .fa-xmark {
+  display: block;
+}
+
 ul {
   list-style: none;
 }
@@ -71,9 +110,6 @@ a {
   text-decoration: none;
 }
 
-.home {
-  display: none;
-}
 .home .hero {
   position: relative;
   width: 100%;
@@ -166,11 +202,13 @@ a {
   color: #e1d4c9;
 }
 .home .fav_coffee .slider .drink {
-  transition: opacity 500ms ease;
   width: 480px;
   height: 640px;
   display: flex;
   flex-direction: column;
+}
+.home .fav_coffee .slider .drink:hover {
+  cursor: pointer;
 }
 .home .fav_coffee .slider .drink .price {
   font-weight: bold;
@@ -653,4 +691,31 @@ a {
 .modal_button_active {
   background-color: #665f55;
   color: #e1d4c9;
+}
+
+@keyframes slideInHoldOut {
+  0% {
+    transform: translateX(100%);
+    opacity: 0;
+    pointer-events: none;
+  }
+  35% {
+    transform: translateX(0);
+    opacity: 1;
+    pointer-events: auto;
+  }
+  70% {
+    transform: translateX(0);
+    opacity: 1;
+    pointer-events: auto;
+  }
+  100% {
+    transform: translateX(-100%);
+    opacity: 0;
+    pointer-events: none;
+  }
+}
+.drink {
+  animation: slideInHoldOut 3000ms ease-in-out forwards;
+  pointer-events: none;
 }/*# sourceMappingURL=style.css.map */
