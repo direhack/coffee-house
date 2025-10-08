@@ -39,7 +39,8 @@ let current = 0,
 	data = [],
 	blocks = [],
 	backup,
-	main;
+	main,
+	productsExpanded = false;
 
 current_product.adds = [];
 
@@ -362,6 +363,7 @@ menu_link.addEventListener("click", (e) => {
 
 	content.addEventListener("contentchange", () => {
 		blocks = document.querySelectorAll(".block");
+		productsExpanded = false;
 		handleResponsiveDisplay();
 
 		blocks.forEach((block, i) => {
@@ -436,7 +438,7 @@ menu_link.addEventListener("click", (e) => {
 
 		products.forEach((p) => p.classList.remove("hidden"));
 
-		if (notDesktop && products.length > 4) {
+		if (notDesktop && products.length > 4 && !productsExpanded) {
 			products.forEach((p, i) => {
 				if (i >= 4) p.classList.add("hidden");
 			});
@@ -450,6 +452,8 @@ menu_link.addEventListener("click", (e) => {
 	function loadAllProducts() {
 		const hiddenProducts = content.querySelectorAll(".block.hidden");
 		hiddenProducts.forEach((p) => p.classList.remove("hidden"));
+
+		productsExpanded = true;
 	}
 
 	window.addEventListener("resize", handleResponsiveDisplay);
