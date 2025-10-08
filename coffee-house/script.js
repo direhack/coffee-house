@@ -45,7 +45,7 @@ current_product.adds = [];
 
 async function getProducts() {
 	try {
-		const response = await fetch("/products.json");
+		const response = await fetch("products.json");
 		if (!response.ok) {
 			throw new Error("Network response was not ok");
 		}
@@ -58,15 +58,15 @@ async function getProducts() {
 let drinks = [];
 
 for (let i = 1; i <= 3; i++) {
-	drinks.push(`/assets/coffee-slider-${i}.png`);
+	drinks.push(`assets/coffee-slider-${i}.png`);
 }
 
 for (let i = 1; i <= 8; i++) {
-	coffee_src.push(`/assets/coffee-${i}.jpg`);
-	dessert_src.push(`/assets/dessert-${i}.png`);
+	coffee_src.push(`assets/coffee-${i}.jpg`);
+	dessert_src.push(`assets/dessert-${i}.png`);
 }
 for (let i = 1; i <= 4; i++) {
-	tea_src.push(`/assets/tea-${i}.png`);
+	tea_src.push(`assets/tea-${i}.png`);
 }
 
 function createImage() {
@@ -104,11 +104,12 @@ function createDrinkPrice() {
 	drink.appendChild(drink_price);
 }
 
-function changeActive(isInterval) {
+function changeActive() {
 	let lines = [".first_line", ".second_line", ".third_line"];
-	lines.forEach((sel) => {
-		document.querySelector(sel).classList.remove("active");
-	});
+	if (lines.length < 3) return;
+	lines.forEach((sel) =>
+		document.querySelector(sel).classList.remove("active")
+	);
 	document.querySelector(lines[current]).classList.add("active");
 }
 
@@ -116,7 +117,7 @@ function changeCoffee(isInterval, direction = "left") {
 	if (isInterval) {
 		current = current > 0 ? current - 1 : 2;
 	}
-	render(isInterval);
+	render();
 	playCycle(direction);
 }
 
@@ -128,20 +129,27 @@ function playCycle(direction = "left") {
 	drink.style.animation = `${base} ${dir} forwards`;
 }
 
-function render(isInterval) {
+function render() {
+	if (!isHome()) return;
 	drink.innerHTML = "";
 	createImage();
 	createDrinkName();
 	createDrinkInfo();
 	createDrinkPrice();
-	changeActive(isInterval);
+	changeActive();
 }
 
 let timer = null;
 let startedAt = 0;
 let remaining = INTERVAL;
 
+const isHome = () => main.classList.contains("home");
+
 function tick() {
+	if (!isHome()) {
+		schedule(INTERVAL);
+		return;
+	}
 	changeCoffee(true, "left");
 	remaining = INTERVAL;
 	schedule(INTERVAL);
@@ -177,6 +185,12 @@ drink.addEventListener("pointerenter", pause);
 	drink.addEventListener(ev, resume)
 );
 
+drink.addEventListener("animationend", (e) => {
+	if ((e.animationName = "slideInHoldOut")) {
+		drink.style.transform = "none";
+	}
+});
+
 left_button.addEventListener("click", () => {
 	pause();
 	current = current > 0 ? current - 1 : 2;
@@ -198,13 +212,16 @@ button.addEventListener("click", () => menu_link.click());
 main = document.querySelector("main");
 backup = Array.from(main.childNodes);
 
-menu_link.addEventListener("click", () => {
+menu_link.addEventListener("click", (e) => {
+	e.currentTarget.classList.add("disable_cursor");
+
 	menu_link.style.borderBottom = "2px solid #403f3d";
 	cross.click();
 
 	const h1 = document.createElement("h1");
 	const buttons = document.createElement("div");
 	const content = document.createElement("div");
+	const load_more_button = document.createElement("div");
 	h1.innerHTML = `Behind each of our cups <br />
 					hides an <span>amazing surprise</span>`;
 	buttons.innerHTML = `<div class="button coffee">
@@ -219,16 +236,25 @@ menu_link.addEventListener("click", () => {
 						<img src="assets/dessert.png" alt="" />
 						<p>Dessert</p>
 					</div>`;
+	load_more_button.innerHTML = `
+	<i class="fa-solid fa-rotate-right"></i>
+	`;
 	main.classList.remove("home");
 	main.classList.add("menu");
 	buttons.classList.add("buttons");
 	content.classList.add("content");
+	load_more_button.classList.add("load-button");
 	main.innerHTML = "";
 	main.appendChild(h1);
 	main.appendChild(buttons);
 	main.appendChild(content);
+	main.appendChild(load_more_button);
 
-	document.querySelector(".coffee").addEventListener("click", () => {
+	document.querySelector(".coffee").addEventListener("click", (e) => {
+		e.currentTarget.classList.add("disable_cursor");
+		document.querySelector(".tea").classList.remove("disable_cursor");
+		document.querySelector(".dessert").classList.remove("disable_cursor");
+
 		getProducts();
 
 		content.innerHTML = "";
@@ -262,7 +288,10 @@ menu_link.addEventListener("click", () => {
 		content.dispatchEvent(new Event("contentchange"));
 	});
 
-	document.querySelector(".tea").addEventListener("click", () => {
+	document.querySelector(".tea").addEventListener("click", (e) => {
+		e.currentTarget.classList.add("disable_cursor");
+		document.querySelector(".coffee").classList.remove("disable_cursor");
+		document.querySelector(".dessert").classList.remove("disable_cursor");
 		getProducts();
 
 		content.innerHTML = "";
@@ -295,7 +324,10 @@ menu_link.addEventListener("click", () => {
 		content.dispatchEvent(new Event("contentchange"));
 	});
 
-	document.querySelector(".dessert").addEventListener("click", () => {
+	document.querySelector(".dessert").addEventListener("click", (e) => {
+		e.currentTarget.classList.add("disable_cursor");
+		document.querySelector(".tea").classList.remove("disable_cursor");
+		document.querySelector(".coffee").classList.remove("disable_cursor");
 		getProducts();
 
 		content.innerHTML = "";
@@ -330,6 +362,7 @@ menu_link.addEventListener("click", () => {
 
 	content.addEventListener("contentchange", () => {
 		blocks = document.querySelectorAll(".block");
+		handleResponsiveDisplay();
 
 		blocks.forEach((block, i) => {
 			block.addEventListener("click", () => {
@@ -382,6 +415,44 @@ menu_link.addEventListener("click", () => {
 	});
 
 	document.querySelector(".coffee").click();
+
+	const rotate_arrow = document.querySelector(".fa-rotate-right");
+	let rotation = 0;
+
+	rotate_arrow.addEventListener("click", () => {
+		rotation += 360;
+		rotate_arrow.style.transform = `rotate(${rotation}deg)`;
+		rotate_arrow.style.transition = `.5s`;
+		setTimeout(loadAllProducts, 500);
+	});
+
+	rotate_arrow.addEventListener("transitionend", () => {
+		load_more_button.style.display = "none";
+	});
+
+	function handleResponsiveDisplay() {
+		const notDesktop = window.innerWidth <= 768;
+		const products = content.querySelectorAll(".block");
+
+		products.forEach((p) => p.classList.remove("hidden"));
+
+		if (notDesktop && products.length > 4) {
+			products.forEach((p, i) => {
+				if (i >= 4) p.classList.add("hidden");
+			});
+			load_more_button.style.display = "block";
+		} else {
+			load_more_button.style.display = "none";
+		}
+		rotate_arrow.style.transition = "none";
+	}
+
+	function loadAllProducts() {
+		const hiddenProducts = content.querySelectorAll(".block.hidden");
+		hiddenProducts.forEach((p) => p.classList.remove("hidden"));
+	}
+
+	window.addEventListener("resize", handleResponsiveDisplay);
 });
 
 links.forEach((link, i) => {
@@ -389,10 +460,15 @@ links.forEach((link, i) => {
 		if (i !== 4) {
 			if (i === 0) cross.click();
 			menu_link.style.borderBottom = "";
+			menu_link.classList.remove("disable_cursor");
 			main.classList.remove("menu");
 			main.classList.add("home");
 			main.replaceChildren(...backup);
 			document.querySelector("video").play();
+
+			remaining = INTERVAL;
+			render();
+			schedule(INTERVAL);
 		}
 	});
 });
@@ -403,10 +479,15 @@ burger_menu_links.forEach((link, i) => {
 			menu_link.click();
 		} else if (i !== 3) {
 			cross.click();
+			menu_link.classList.remove("disable_cursor");
 			main.classList.remove("menu");
 			main.classList.add("home");
 			main.replaceChildren(...backup);
 			document.querySelector("video").play();
+
+			remaining = INTERVAL;
+			render();
+			schedule(INTERVAL);
 		} else {
 			cross.click();
 		}
@@ -417,16 +498,30 @@ window.matchMedia("(min-width: 768px)").addEventListener("change", (e) => {
 	if (e.matches) {
 		burger_menu.classList.remove("is-open");
 		header.classList.remove("menu-open");
+		burger_menu.style.display = "none";
 	}
 });
 
 bars.addEventListener("click", () => {
-	burger_menu.classList.add("is-open");
+	burger_menu.style.display = "block";
+	requestAnimationFrame(() => {
+		burger_menu.classList.add("is-open");
+	});
+
 	header.classList.add("menu-open");
 });
 
 cross.addEventListener("click", () => {
-	burger_menu.classList.remove("is-open");
+	burger_menu.classList.remove("is-open"); // start slide-out
+	const onEnd = (e) => {
+		if (e.propertyName === "transform") {
+			// after slide completes
+			burger_menu.style.display = "none";
+			burger_menu.removeEventListener("transitionend", onEnd);
+		}
+	};
+	burger_menu.addEventListener("transitionend", onEnd);
+	// burger_menu.classList.remove("is-open");
 	header.classList.remove("menu-open");
 });
 
