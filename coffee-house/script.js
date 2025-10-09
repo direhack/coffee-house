@@ -433,6 +433,7 @@ menu_link.addEventListener("click", (e) => {
 	});
 
 	function handleResponsiveDisplay() {
+		const rotate_arrow = document.querySelector(".fa-rotate-right");
 		const notDesktop = window.innerWidth <= 768;
 		const products = content.querySelectorAll(".block");
 
