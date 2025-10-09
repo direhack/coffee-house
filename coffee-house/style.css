@@ -58,6 +58,8 @@ header .fa-bars {
     opacity: 1;
     transform: rotate(0) scale(1);
   }
+}
+@media only screen and (max-width: 768px) and (hover: hover) {
   header .fa-bars:hover {
     cursor: pointer;
   }
@@ -72,8 +74,10 @@ header .fa-xmark {
   transform: rotate(-90deg) scale(0.5);
   pointer-events: none;
 }
-header .fa-xmark:hover {
-  cursor: pointer;
+@media (hover: hover) {
+  header .fa-xmark:hover {
+    cursor: pointer;
+  }
 }
 header ul {
   display: flex;
@@ -82,15 +86,19 @@ header ul {
 header .logo {
   width: 100px;
 }
-header .logo:hover {
-  cursor: pointer;
+@media (hover: hover) {
+  header .logo:hover {
+    cursor: pointer;
+  }
 }
 header a {
   color: #403f3d;
   border-bottom: 2px solid transparent;
 }
-header a:hover {
-  border-bottom-color: #403f3d;
+@media (hover: hover) {
+  header a:hover {
+    border-bottom-color: #403f3d;
+  }
 }
 header #logo {
   border-bottom: none;
@@ -125,9 +133,11 @@ header .menu_link {
   color: #403f3d;
   border-bottom: 2px solid transparent;
 }
-.burger-menu a:hover {
-  border-bottom-color: #403f3d;
-  cursor: pointer;
+@media (hover: hover) {
+  .burger-menu a:hover {
+    border-bottom-color: #403f3d;
+    cursor: pointer;
+  }
 }
 
 .burger-menu.is-open {
@@ -252,11 +262,13 @@ a {
     align-self: center;
   }
 }
-.home .hero .behind button:hover {
-  cursor: pointer;
-}
-.home .hero .behind button:hover .fa-mug-hot {
-  visibility: visible;
+@media (hover: hover) {
+  .home .hero .behind button:hover {
+    cursor: pointer;
+  }
+  .home .hero .behind button:hover .fa-mug-hot {
+    visibility: visible;
+  }
 }
 .home .hero .behind button .fa-mug-hot {
   visibility: hidden;
@@ -284,11 +296,13 @@ a {
   padding: 10px;
   color: #665f55;
 }
-.home .fav_coffee .slider .arrow-right:hover,
-.home .fav_coffee .slider .arrow-left:hover {
-  cursor: pointer;
-  background-color: #665f55;
-  color: #e1d4c9;
+@media (hover: hover) {
+  .home .fav_coffee .slider .arrow-right:hover,
+  .home .fav_coffee .slider .arrow-left:hover {
+    cursor: pointer;
+    background-color: #665f55;
+    color: #e1d4c9;
+  }
 }
 .home .fav_coffee .slider .drink {
   width: 100%;
@@ -298,8 +312,10 @@ a {
   animation: slideInHoldOut 3000ms ease-in-out forwards;
   pointer-events: none;
 }
-.home .fav_coffee .slider .drink:hover {
-  cursor: pointer;
+@media (hover: hover) {
+  .home .fav_coffee .slider .drink:hover {
+    cursor: pointer;
+  }
 }
 .home .fav_coffee .slider .drink .price {
   font-weight: bold;
@@ -353,9 +369,11 @@ a {
   display: block;
   transition: 1s;
 }
-.home .about .images .image:hover {
-  transform: scale(0.9);
-  cursor: pointer;
+@media (hover: hover) {
+  .home .about .images .image:hover {
+    transform: scale(0.9);
+    cursor: pointer;
+  }
 }
 .home .about .images .a {
   grid-column: 1;
@@ -470,11 +488,13 @@ a {
   font-size: 18px;
   font-weight: 700;
 }
-.home .mob_app .first_block .buttons .app_store:hover,
-.home .mob_app .first_block .buttons .google_play:hover {
-  background: #665f55;
-  color: #e1d4c9;
-  border-color: #665f55;
+@media (hover: hover) {
+  .home .mob_app .first_block .buttons .app_store:hover,
+  .home .mob_app .first_block .buttons .google_play:hover {
+    background: #665f55;
+    color: #e1d4c9;
+    border-color: #665f55;
+  }
 }
 .home .mob_app .second_block {
   width: 40%;
@@ -552,10 +572,12 @@ a {
   justify-content: center;
   color: #e1d4c9;
 }
-.contact .first_block .socials .fa-brands:hover {
-  color: #403f3d;
-  background-color: #e1d4c9;
-  cursor: pointer;
+@media (hover: hover) {
+  .contact .first_block .socials .fa-brands:hover {
+    color: #403f3d;
+    background-color: #e1d4c9;
+    cursor: pointer;
+  }
 }
 .contact .location,
 .contact .phone,
@@ -565,11 +587,13 @@ a {
   gap: 10px;
   border-bottom: 1px solid transparent;
 }
-.contact .location:hover,
-.contact .phone:hover,
-.contact .schedule:hover {
-  cursor: pointer;
-  border-bottom-color: #e1d4c9;
+@media (hover: hover) {
+  .contact .location:hover,
+  .contact .phone:hover,
+  .contact .schedule:hover {
+    cursor: pointer;
+    border-bottom-color: #e1d4c9;
+  }
 }
 .contact .location .fa-location-dot,
 .contact .location .fa-phone,
@@ -626,13 +650,15 @@ a {
   width: 100px;
   gap: 5px;
 }
-.menu .buttons .button:hover {
-  background-color: #665f55;
-  cursor: pointer;
-  color: #e1d4c9;
-}
-.menu .buttons .button:hover img {
-  background-color: #e1d4c9;
+@media (hover: hover) {
+  .menu .buttons .button:hover {
+    background-color: #665f55;
+    cursor: pointer;
+    color: #e1d4c9;
+  }
+  .menu .buttons .button:hover img {
+    background-color: #e1d4c9;
+  }
 }
 .menu .buttons img {
   border-radius: 100%;
@@ -672,9 +698,11 @@ a {
     width: 90%;
   }
 }
-.menu .content .block:hover {
-  transform: scale(0.9);
-  cursor: pointer;
+@media (hover: hover) {
+  .menu .content .block:hover {
+    transform: scale(0.9);
+    cursor: pointer;
+  }
 }
 .menu .content .block img {
   width: 100%;
@@ -856,12 +884,14 @@ a {
     padding: 0 28px;
   }
 }
-.modal .info .sizes_block .small:hover,
-.modal .info .sizes_block .medium:hover,
-.modal .info .sizes_block .large:hover {
-  cursor: pointer;
-  background-color: #665f55;
-  color: #e1d4c9;
+@media (hover: hover) {
+  .modal .info .sizes_block .small:hover,
+  .modal .info .sizes_block .medium:hover,
+  .modal .info .sizes_block .large:hover {
+    cursor: pointer;
+    background-color: #665f55;
+    color: #e1d4c9;
+  }
 }
 .modal .info .sizes_block .s,
 .modal .info .sizes_block .m,
@@ -925,12 +955,14 @@ a {
     padding: 0 20px;
   }
 }
-.modal .info .additives_block .first:hover,
-.modal .info .additives_block .second:hover,
-.modal .info .additives_block .third:hover {
-  cursor: pointer;
-  background-color: #665f55;
-  color: #e1d4c9;
+@media (hover: hover) {
+  .modal .info .additives_block .first:hover,
+  .modal .info .additives_block .second:hover,
+  .modal .info .additives_block .third:hover {
+    cursor: pointer;
+    background-color: #665f55;
+    color: #e1d4c9;
+  }
 }
 .modal .info .additives_block .additive_one,
 .modal .info .additives_block .additive_two,
@@ -1002,10 +1034,12 @@ a {
     justify-content: center;
   }
 }
-.modal .close:hover {
-  cursor: pointer;
-  background-color: #665f55;
-  color: #e1d4c9;
+@media (hover: hover) {
+  .modal .close:hover {
+    cursor: pointer;
+    background-color: #665f55;
+    color: #e1d4c9;
+  }
 }
 
 .modal-open {
@@ -1050,9 +1084,11 @@ a {
   padding: 10px 8px;
   color: #665f55;
 }
-.fa-rotate-right:hover {
-  background-color: #665f55;
-  color: #d6cdc9;
+@media (hover: hover) {
+  .fa-rotate-right:hover {
+    background-color: #665f55;
+    color: #d6cdc9;
+  }
 }
 
 .load-button {
