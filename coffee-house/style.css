@@ -850,7 +850,7 @@ a {
 }
 
 .active {
-  color: #665f55;
+  color: #665f55 !important;
 }
 
 .clicked {
