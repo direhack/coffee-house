@@ -40,7 +40,9 @@ let current = 0,
 	blocks = [],
 	backup,
 	main,
-	productsExpanded = false;
+	productsExpanded = false,
+	isTransitioning = false,
+	isOpen = false;
 
 current_product.adds = [];
 
@@ -504,31 +506,53 @@ window.matchMedia("(min-width: 768px)").addEventListener("change", (e) => {
 		burger_menu.classList.remove("is-open");
 		header.classList.remove("menu-open");
 		burger_menu.style.display = "none";
+		isOpen = false;
+		isTransitioning = false;
 	}
 });
 
-bars.addEventListener("click", () => {
+bars.addEventListener("click", openMenu);
+
+cross.addEventListener("click", closeMenu);
+
+function openMenu() {
+	if (isOpen || isTransitioning) return;
+	isTransitioning = true;
+
 	burger_menu.style.display = "block";
-	requestAnimationFrame(() => {
-		burger_menu.classList.add("is-open");
-	});
 
+	burger_menu.getBoundingClientRect();
+
+	burger_menu.classList.add("is-open");
 	header.classList.add("menu-open");
-});
 
-cross.addEventListener("click", () => {
-	burger_menu.classList.remove("is-open"); // start slide-out
 	const onEnd = (e) => {
 		if (e.propertyName === "transform") {
-			// after slide completes
-			burger_menu.style.display = "none";
+			isTransitioning = false;
+			isOpen = true;
 			burger_menu.removeEventListener("transitionend", onEnd);
 		}
 	};
 	burger_menu.addEventListener("transitionend", onEnd);
-	// burger_menu.classList.remove("is-open");
+}
+
+function closeMenu() {
+	if (!isOpen || isTransitioning) return;
+	isTransitioning = true;
+
+	burger_menu.classList.remove("is-open");
 	header.classList.remove("menu-open");
-});
+
+	const onEnd = (e) => {
+		if (e.propertyName === "transform") {
+			burger_menu.style.display = "none";
+			isTransitioning = false;
+			isOpen = false;
+			burger_menu.removeEventListener("transitionend", onEnd);
+		}
+	};
+	burger_menu.addEventListener("transitionend", onEnd);
+}
 
 const updateTotal = () => {
 	const item = data[current_product.index];
@@ -566,7 +590,7 @@ const additiveFilter = (num) => {
 
 [button_S, button_M, button_L].forEach((btn) => {
 	btn.addEventListener("click", () => {
-		[button_S, button_M, button_L].forEach((b) => {
+		[button_S, button_M, button_L].forEach((b, i) => {
 			b.classList.remove("modal_button_active");
 		});
 		btn.classList.add("modal_button_active");
