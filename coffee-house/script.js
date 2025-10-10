@@ -42,7 +42,8 @@ let current = 0,
 	main,
 	productsExpanded = false,
 	isTransitioning = false,
-	isOpen = false;
+	isOpen = false,
+	imageName = '';
 
 current_product.adds = [];
 
@@ -380,13 +381,17 @@ menu_link.addEventListener("click", (e) => {
 				modal_photo.src = block.querySelector("img").src;
 				modal_photo.alt = `modal-photo-${i}`;
 
-				if (modal_photo.src.includes("coffee"))
+				//getProducts();
+
+				imageName = modal_photo.src.split("/").pop();
+				
+				if (imageName.includes("coffee"))
 					(data = data.filter((el) => el.category === "coffee")),
 						(current_product.type = "coffee");
-				else if (modal_photo.src.includes("tea"))
+				else if (imageName.includes("tea"))
 					(data = data.filter((el) => el.category === "tea")),
 						(current_product.type = "tea");
-				else if (modal_photo.src.includes("dessert"))
+				else if (imageName.includes("dessert"))
 					(data = data.filter((el) => el.category === "dessert")),
 						(current_product.type = "dessert");
 
@@ -403,8 +408,6 @@ menu_link.addEventListener("click", (e) => {
 				third_additive.textContent = `${data[i].additives[2].name}`;
 
 				total_price.textContent = `$${data[i].price}`;
-
-				getProducts();
 			});
 		});
 	});
