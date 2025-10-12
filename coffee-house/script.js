@@ -1,4 +1,5 @@
 const drink = document.querySelector(".drink"),
+	slider = document.querySelector(".slider"),
 	header = document.querySelector("header"),
 	left_button = document.querySelector(".arrow-left"),
 	right_button = document.querySelector(".arrow-right"),
@@ -36,14 +37,15 @@ const drink = document.querySelector(".drink"),
 	INTERVAL = 3000;
 
 let current = 0,
+	startX = 0,
+	endX = 0,
 	data = [],
 	blocks = [],
 	backup,
 	main,
 	productsExpanded = false,
 	isTransitioning = false,
-	isOpen = false,
-	imageName = '';
+	isOpen = false;
 
 current_product.adds = [];
 
@@ -110,6 +112,7 @@ function createDrinkPrice() {
 
 function changeActive() {
 	let lines = [".first_line", ".second_line", ".third_line"];
+	lines = lines.reverse();
 	if (lines.length < 3) return;
 	lines.forEach((sel) =>
 		document.querySelector(sel).classList.remove("active")
@@ -209,6 +212,22 @@ right_button.addEventListener("click", () => {
 	changeCoffee(false, "right");
 	remaining = INTERVAL;
 	resume();
+});
+
+slider.addEventListener("touchstart", (e) => {
+	startX = e.touches[0].clientX;
+});
+
+slider.addEventListener("touchmove", (e) => {
+	endX = e.touches[0].clientX;
+});
+
+slider.addEventListener("touchend", () => {
+	if (startX - endX > 50) {
+		right_button.click();
+	} else if (endX - startX > 50) {
+		left_button.click();
+	}
 });
 
 button.addEventListener("click", () => menu_link.click());
@@ -364,10 +383,11 @@ menu_link.addEventListener("click", (e) => {
 		content.dispatchEvent(new Event("contentchange"));
 	});
 
-	content.addEventListener("contentchange", () => {
+	content.addEventListener("contentchange", (e) => {
 		blocks = document.querySelectorAll(".block");
 		productsExpanded = false;
 		handleResponsiveDisplay();
+		getProducts();
 
 		blocks.forEach((block, i) => {
 			block.addEventListener("click", () => {
@@ -381,17 +401,13 @@ menu_link.addEventListener("click", (e) => {
 				modal_photo.src = block.querySelector("img").src;
 				modal_photo.alt = `modal-photo-${i}`;
 
-				//getProducts();
-
-				imageName = modal_photo.src.split("/").pop();
-				
-				if (imageName.includes("coffee"))
+				if (modal_photo.src.includes("coffee"))
 					(data = data.filter((el) => el.category === "coffee")),
 						(current_product.type = "coffee");
-				else if (imageName.includes("tea"))
+				else if (modal_photo.src.includes("tea"))
 					(data = data.filter((el) => el.category === "tea")),
 						(current_product.type = "tea");
-				else if (imageName.includes("dessert"))
+				else if (modal_photo.src.includes("dessert"))
 					(data = data.filter((el) => el.category === "dessert")),
 						(current_product.type = "dessert");
 
@@ -408,6 +424,8 @@ menu_link.addEventListener("click", (e) => {
 				third_additive.textContent = `${data[i].additives[2].name}`;
 
 				total_price.textContent = `$${data[i].price}`;
+
+				// getProducts();
 			});
 		});
 	});
