@@ -79,6 +79,11 @@ function createImage() {
 	let img = document.createElement("img");
 	img.src = drinks[current];
 	img.alt = `coffee-slider-${current}`;
+	img.oncontextmenu = (e) => {
+		e.preventDefault();
+		return false;
+	};
+	img.draggable = false;
 	drink.appendChild(img);
 }
 
@@ -112,6 +117,7 @@ function createDrinkPrice() {
 
 function changeActive() {
 	let lines = [".first_line", ".second_line", ".third_line"];
+	// lines = lines.reverse();
 	if (lines.length < 3) return;
 	lines.forEach((sel) =>
 		document.querySelector(sel).classList.remove("active")
@@ -215,6 +221,7 @@ right_button.addEventListener("click", () => {
 
 slider.addEventListener("touchstart", (e) => {
 	startX = e.touches[0].clientX;
+	endX = startX;
 });
 
 slider.addEventListener("touchmove", (e) => {
@@ -222,11 +229,19 @@ slider.addEventListener("touchmove", (e) => {
 });
 
 slider.addEventListener("touchend", () => {
-	if (startX - endX > 50) {
-		right_button.click();
-	} else if (endX - startX > 50) {
-		left_button.click();
+	const deltaX = endX - startX;
+	const minSwipeDistance = 50;
+
+	if (Math.abs(deltaX) > minSwipeDistance) {
+		if (deltaX < 0) {
+			left_button.click();
+		} else {
+			right_button.click();
+		}
 	}
+
+	startX = 0;
+	endX = 0;
 });
 
 button.addEventListener("click", () => menu_link.click());
