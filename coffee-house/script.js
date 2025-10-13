@@ -112,7 +112,6 @@ function createDrinkPrice() {
 
 function changeActive() {
 	let lines = [".first_line", ".second_line", ".third_line"];
-	lines = lines.reverse();
 	if (lines.length < 3) return;
 	lines.forEach((sel) =>
 		document.querySelector(sel).classList.remove("active")
