@@ -384,9 +384,31 @@ a {
     overflow: hidden;
   }
 }
-.home .fav_coffee .three-lines .fa-minus {
-  font-size: 40px;
-  color: #c1b6ad;
+.home .fav_coffee .three-lines {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  margin-top: 30px;
+}
+.home .fav_coffee .three-lines .progress-bar {
+  width: 60px;
+  height: 6px;
+  background-color: #c1b6ad;
+  position: relative;
+  overflow: hidden;
+  border-radius: 3px;
+}
+.home .fav_coffee .three-lines .progress-bar::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 0%;
+  background-color: #665f55;
+}
+.home .fav_coffee .three-lines .progress-bar.active::before {
+  animation: lineProgress 3s linear forwards;
 }
 .home .about {
   margin-top: 200px;
@@ -1281,6 +1303,11 @@ a {
   color: #e1d4c9 !important;
 }
 
+.no-hover {
+  background-color: initial !important;
+  color: initial !important;
+}
+
 @keyframes slideInHoldOut {
   0% {
     transform: translateX(100%);
@@ -1328,4 +1355,13 @@ a {
 
 .hidden {
   display: none !important;
+}
+
+@keyframes lineProgress {
+  from {
+    width: 0%;
+  }
+  to {
+    width: 100%;
+  }
 }/*# sourceMappingURL=style.css.map */
