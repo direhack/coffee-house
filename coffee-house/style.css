@@ -410,6 +410,12 @@ a {
 .home .fav_coffee .three-lines .progress-bar.active::before {
   animation: lineProgress 3s linear forwards;
 }
+.home .fav_coffee .three-lines .progress-bar.paused::before {
+  animation-play-state: paused;
+}
+.home .fav_coffee .three-lines .progress-bar.resume::before {
+  animation-play-state: running;
+}
 .home .about {
   margin-top: 200px;
 }
