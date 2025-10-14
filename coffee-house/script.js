@@ -34,7 +34,8 @@ const drink = document.querySelector(".drink"),
 	button_third_additive = document.querySelector(".modal .third"),
 	total_price = document.querySelector(".modal .total_price"),
 	current_product = {},
-	INTERVAL = 3000;
+	INTERVAL = 3000,
+	lines = [".first_line", ".second_line", ".third_line"];
 
 let current = 0,
 	startX = 0,
@@ -116,8 +117,6 @@ function createDrinkPrice() {
 }
 
 function changeActive() {
-	let lines = [".first_line", ".second_line", ".third_line"];
-	// lines = lines.reverse();
 	if (lines.length < 3) return;
 	lines.forEach((sel) =>
 		document.querySelector(sel).classList.remove("active")
@@ -182,11 +181,18 @@ function pause() {
 	remaining = Math.max(0, remaining - elapsed);
 
 	drink.style.animationPlayState = "paused";
+
+	const activeLine = document.querySelector(lines[current]);
+	activeLine.classList.remove("resume");
+    activeLine.classList.add("paused");
 }
 
 function resume() {
 	if (timer) return;
 	drink.style.animationPlayState = "running";
+	const activeLine = document.querySelector(lines[current]);
+	activeLine.classList.remove("paused");
+    activeLine.classList.add("resume");
 	schedule(remaining || INTERVAL);
 }
 
