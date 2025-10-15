@@ -41,12 +41,15 @@ let current = 0,
 	startX = 0,
 	endX = 0,
 	data = [],
+	fullData = [],
+	filteredData = [],
 	blocks = [],
 	backup,
 	main,
 	productsExpanded = false,
 	isTransitioning = false,
-	isOpen = false;
+	isOpen = false,
+	imageName = "";
 
 current_product.adds = [];
 
@@ -56,7 +59,9 @@ async function getProducts() {
 		if (!response.ok) {
 			throw new Error("Network response was not ok");
 		}
-		data = await response.json();
+		const json = await response.json();
+		fullData = json;
+		data = json;
 	} catch (error) {
 		console.error("Error fetching data:", error);
 	}
@@ -184,7 +189,7 @@ function pause() {
 
 	const activeLine = document.querySelector(lines[current]);
 	activeLine.classList.remove("resume");
-    activeLine.classList.add("paused");
+	activeLine.classList.add("paused");
 }
 
 function resume() {
@@ -192,7 +197,7 @@ function resume() {
 	drink.style.animationPlayState = "running";
 	const activeLine = document.querySelector(lines[current]);
 	activeLine.classList.remove("paused");
-    activeLine.classList.add("resume");
+	activeLine.classList.add("resume");
 	schedule(remaining || INTERVAL);
 }
 
@@ -298,11 +303,9 @@ menu_link.addEventListener("click", (e) => {
 		document.querySelector(".tea").classList.remove("disable_cursor");
 		document.querySelector(".dessert").classList.remove("disable_cursor");
 
-		getProducts();
-
 		content.innerHTML = "";
 
-		data = data.filter((el) => el.category === "coffee");
+		filteredData = fullData.filter((el) => el.category === "coffee");
 		coffee_src.forEach((coffee, i) => {
 			let img = document.createElement("img");
 			let name = document.createElement("h3");
@@ -314,9 +317,9 @@ menu_link.addEventListener("click", (e) => {
 			let price = document.createElement("p");
 			price.classList.add("price");
 
-			name.textContent = `${data[i].name}`;
-			description.textContent = `${data[i].description}`;
-			price.textContent = `$${data[i].price}`;
+			name.textContent = `${filteredData[i].name}`;
+			description.textContent = `${filteredData[i].description}`;
+			price.textContent = `$${filteredData[i].price}`;
 			img.src = coffee;
 			img.alt = `coffee-${i}`;
 
@@ -335,10 +338,9 @@ menu_link.addEventListener("click", (e) => {
 		e.currentTarget.classList.add("disable_cursor");
 		document.querySelector(".coffee").classList.remove("disable_cursor");
 		document.querySelector(".dessert").classList.remove("disable_cursor");
-		getProducts();
 
 		content.innerHTML = "";
-		data = data.filter((el) => el.category === "tea");
+		filteredData = fullData.filter((el) => el.category === "tea");
 		tea_src.forEach((tea, i) => {
 			let img = document.createElement("img");
 			let name = document.createElement("h3");
@@ -350,9 +352,9 @@ menu_link.addEventListener("click", (e) => {
 			let price = document.createElement("p");
 			price.classList.add("price");
 
-			name.textContent = `${data[i].name}`;
-			description.textContent = `${data[i].description}`;
-			price.textContent = `$${data[i].price}`;
+			name.textContent = `${filteredData[i].name}`;
+			description.textContent = `${filteredData[i].description}`;
+			price.textContent = `$${filteredData[i].price}`;
 			img.src = tea;
 			img.alt = `tea-${i}`;
 
@@ -371,10 +373,9 @@ menu_link.addEventListener("click", (e) => {
 		e.currentTarget.classList.add("disable_cursor");
 		document.querySelector(".tea").classList.remove("disable_cursor");
 		document.querySelector(".coffee").classList.remove("disable_cursor");
-		getProducts();
 
 		content.innerHTML = "";
-		data = data.filter((el) => el.category === "dessert");
+		filteredData = fullData.filter((el) => el.category === "dessert");
 		dessert_src.forEach((dessert, i) => {
 			let img = document.createElement("img");
 			let name = document.createElement("h3");
@@ -386,9 +387,9 @@ menu_link.addEventListener("click", (e) => {
 			let price = document.createElement("p");
 			price.classList.add("price");
 
-			name.textContent = `${data[i].name}`;
-			description.textContent = `${data[i].description}`;
-			price.textContent = `$${data[i].price}`;
+			name.textContent = `${filteredData[i].name}`;
+			description.textContent = `${filteredData[i].description}`;
+			price.textContent = `$${filteredData[i].price}`;
 			img.src = dessert;
 			img.alt = `dessert-${i}`;
 
@@ -407,7 +408,6 @@ menu_link.addEventListener("click", (e) => {
 		blocks = document.querySelectorAll(".block");
 		productsExpanded = false;
 		handleResponsiveDisplay();
-		getProducts();
 
 		blocks.forEach((block, i) => {
 			block.addEventListener("click", () => {
@@ -421,31 +421,32 @@ menu_link.addEventListener("click", (e) => {
 				modal_photo.src = block.querySelector("img").src;
 				modal_photo.alt = `modal-photo-${i}`;
 
-				if (modal_photo.src.includes("coffee"))
-					(data = data.filter((el) => el.category === "coffee")),
+				imageName = modal_photo.src.split("/").pop();
+				current_product.adds = [];
+
+				if (imageName.includes("coffee"))
+					(filteredData = fullData.filter((el) => el.category === "coffee")),
 						(current_product.type = "coffee");
-				else if (modal_photo.src.includes("tea"))
-					(data = data.filter((el) => el.category === "tea")),
+				else if (imageName.includes("tea"))
+					(filteredData = fullData.filter((el) => el.category === "tea")),
 						(current_product.type = "tea");
-				else if (modal_photo.src.includes("dessert"))
-					(data = data.filter((el) => el.category === "dessert")),
+				else if (imageName.includes("dessert"))
+					(filteredData = fullData.filter((el) => el.category === "dessert")),
 						(current_product.type = "dessert");
 
 				current_product.index = i;
-				modal_name.textContent = `${data[i].name}`;
-				modal_description.textContent = `${data[i].description}`;
+				modal_name.textContent = `${filteredData[i].name}`;
+				modal_description.textContent = `${filteredData[i].description}`;
 
-				S.textContent = `${data[i].sizes.s.size}`;
-				M.textContent = `${data[i].sizes.m.size}`;
-				L.textContent = `${data[i].sizes.l.size}`;
+				S.textContent = `${filteredData[i].sizes.s.size}`;
+				M.textContent = `${filteredData[i].sizes.m.size}`;
+				L.textContent = `${filteredData[i].sizes.l.size}`;
 
-				first_additive.textContent = `${data[i].additives[0].name}`;
-				second_additive.textContent = `${data[i].additives[1].name}`;
-				third_additive.textContent = `${data[i].additives[2].name}`;
+				first_additive.textContent = `${filteredData[i].additives[0].name}`;
+				second_additive.textContent = `${filteredData[i].additives[1].name}`;
+				third_additive.textContent = `${filteredData[i].additives[2].name}`;
 
-				total_price.textContent = `$${data[i].price}`;
-
-				// getProducts();
+				total_price.textContent = `$${filteredData[i].price}`;
 			});
 		});
 	});
@@ -596,7 +597,7 @@ function closeMenu() {
 }
 
 const updateTotal = () => {
-	const item = data[current_product.index];
+	const item = filteredData[current_product.index];
 
 	const base = parseFloat(item.price);
 	const sizeAdd = parseFloat(item.sizes[current_product.size]["add-price"]);
@@ -612,11 +613,11 @@ const updateTotal = () => {
 
 const filter = () => {
 	if (current_product.type === "coffee")
-		data = data.filter((el) => el.category === "coffee");
+		filteredData = data.filter((el) => el.category === "coffee");
 	else if (current_product.type === "tea")
-		data = data.filter((el) => el.category === "tea");
+		filteredData = data.filter((el) => el.category === "tea");
 	else if (current_product.type === "dessert")
-		data = data.filter((el) => el.category === "dessert");
+		filteredData = data.filter((el) => el.category === "dessert");
 };
 
 const additiveFilter = (num) => {
@@ -698,7 +699,7 @@ close.addEventListener("click", () => {
 		btn.classList.remove("modal_button_active");
 	});
 
-	getProducts();
+	current_product.adds = [];
 });
 
 render(); //initial
