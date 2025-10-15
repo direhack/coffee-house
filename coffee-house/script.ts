@@ -3,6 +3,8 @@ const main = document.querySelector("main") as HTMLElement;
 const header = document.querySelector("header") as HTMLElement;
 const drink = document.querySelector(".drink") as HTMLElement;
 const slider = document.querySelector(".slider") as HTMLElement;
+const three_lines = document.querySelector(".three-lines") as HTMLElement;
+const loader = document.querySelector(".loader") as HTMLElement;
 
 const left_button = document.querySelector(".arrow-left") as HTMLElement;
 const right_button = document.querySelector(".arrow-right") as HTMLElement;
@@ -137,6 +139,42 @@ type Product = {
 	sizes: Record<SizeKey, Size>;
 	additives: Additive[];
 };
+
+// API REQUESTS
+
+async function getFavorites(): Promise<void> {
+	try {
+		loader.style.display = "block";
+		slider.style.display = "none";
+		three_lines.style.display = "none";
+		const response = await fetch(
+			"http://coffee-shop-be.eu-central-1.elasticbeanstalk.com/products/favorites"
+		);
+		if (!response.ok) {
+			loader.textContent = "Something went wrong. Please, refresh the page";
+			throw new Error("Network response was not ok");
+		}
+		data = await response.json();
+		loader.style.display = "none";
+		slider.style.display = "flex";
+		three_lines.style.display = "flex";
+	} catch (error) {
+		console.log("Error fetching data:", error);
+	}
+}
+
+getFavorites(); // add to the end
+
+async function getAllProducts(): Promise<void> {
+	const response = await fetch(
+		"http://coffee-shop-be.eu-central-1.elasticbeanstalk.com/products"
+	);
+	if (!response.ok) {
+		throw new Error("Network response was no ok");
+	}
+	data = await response.json();
+	console.log(data);
+}
 
 //
 
@@ -352,22 +390,37 @@ slider.addEventListener("touchend", () => {
 
 button.addEventListener("click", () => menu_link.click());
 
-menu_link.addEventListener("click", (e: Event) => {
+menu_link.addEventListener("click", async (e: Event) => {
 	const target = e.currentTarget as HTMLElement;
 	target.classList.add("disable_cursor");
 
 	menu_link.style.borderBottom = "2px solid #403f3d";
 	cross.click();
-
+	//
+	main.innerHTML = "";
 	const h1 = document.createElement("h1");
-	const buttons = document.createElement("div");
-	const content = document.createElement("div");
-	const load_more_button = document.createElement("div");
-
 	h1.innerHTML = `Behind each of our cups <br />
                   hides an <span>amazing surprise</span>`;
+	main.appendChild(h1);
 
-	buttons.innerHTML = `
+	const loader = document.createElement("div");
+	loader.className = "second-loader";
+	loader.textContent = "Loading...";
+	main.appendChild(loader);
+
+	let buttons: HTMLDivElement,
+		content: HTMLDivElement,
+		load_more_button: HTMLDivElement; // Put them above
+
+	try {
+		await getAllProducts();
+		main.removeChild(loader);
+
+		buttons = document.createElement("div");
+		content = document.createElement("div");
+		load_more_button = document.createElement("div");
+
+		buttons.innerHTML = `
     <div class="button coffee">
       <img src="assets/coffee.png" alt="" />
       <p>Coffee</p>
@@ -381,25 +434,146 @@ menu_link.addEventListener("click", (e: Event) => {
       <p>Dessert</p>
     </div>`;
 
-	load_more_button.innerHTML = `<i class="fa-solid fa-rotate-right"></i>`;
+		load_more_button.innerHTML = `<i class="fa-solid fa-rotate-right"></i>`;
 
-	main.classList.remove("home");
-	main.classList.add("menu");
-	buttons.classList.add("buttons");
-	content.classList.add("content");
-	load_more_button.classList.add("load-button");
-	main.innerHTML = "";
-	main.appendChild(h1);
-	main.appendChild(buttons);
-	main.appendChild(content);
-	main.appendChild(load_more_button);
+		main.classList.remove("home");
+		main.classList.add("menu");
+		buttons.classList.add("buttons");
+		content.classList.add("content");
+		load_more_button.classList.add("load-button");
 
-	// Helper function to safely select a single element
-	// function select<T extends Element>(selector: string): T {
-	// 	const el = document.querySelector(selector);
-	// 	if (!el) throw new Error(`Element not found: ${selector}`);
-	// 	return el as T;
-	// }
+		main.appendChild(buttons);
+		main.appendChild(content);
+		main.appendChild(load_more_button);
+
+		buttons.querySelectorAll<HTMLElement>(".button").forEach((btn) => {
+			btn.addEventListener("click", () => {
+				buttons.querySelectorAll<HTMLElement>(".button").forEach((b) => {
+					b.classList.remove("clicked");
+				});
+				btn.classList.add("clicked");
+			});
+		});
+
+		// Coffee button
+		buttons.querySelector(".coffee")?.addEventListener("click", () => {
+			renderCategory("coffee");
+		});
+
+		// Tea button
+		buttons.querySelector(".tea")?.addEventListener("click", () => {
+			renderCategory("tea");
+		});
+
+		// Dessert button
+		buttons.querySelector(".dessert")?.addEventListener("click", () => {
+			renderCategory("dessert");
+		});
+
+		// Initial load coffee category
+		buttons.querySelector<HTMLElement>(".coffee")?.click();
+
+		// Handling content change event
+		content.addEventListener("contentchange", () => {
+			blocks = Array.from(document.querySelectorAll<HTMLElement>(".block"));
+			productsExpanded = false;
+			handleResponsiveDisplay();
+			getProducts();
+
+			blocks.forEach((block, i) => {
+				block.addEventListener("click", () => {
+					document.body.classList.add("modal-open");
+					backdrop.style.display = "block";
+					modal.style.display = "flex";
+
+					button_S.classList.add("modal_button_active");
+					current_product.size = "s";
+
+					const img = block.querySelector("img");
+					if (!img) return;
+					modal_photo.src = img.src;
+					modal_photo.alt = `modal-photo-${i}`;
+
+					// Filter data based on image src
+					if (modal_photo.src.includes("coffee")) {
+						data = data.filter((el) => el.category === "coffee");
+						current_product.type = "coffee";
+					} else if (modal_photo.src.includes("tea")) {
+						data = data.filter((el) => el.category === "tea");
+						current_product.type = "tea";
+					} else if (modal_photo.src.includes("dessert")) {
+						data = data.filter((el) => el.category === "dessert");
+						current_product.type = "dessert";
+					}
+
+					current_product.index = i;
+					modal_name.textContent = data[i]?.name ?? "";
+					modal_description.textContent = data[i]?.description ?? "";
+
+					S.textContent = data[i]?.sizes.s.size ?? "";
+					M.textContent = data[i]?.sizes.m.size ?? "";
+					L.textContent = data[i]?.sizes.l.size ?? "";
+
+					first_additive.textContent = data[i]?.additives[0]?.name ?? "";
+					second_additive.textContent = data[i]?.additives[1]?.name ?? "";
+					third_additive.textContent = data[i]?.additives[2]?.name ?? "";
+
+					total_price.textContent = data[i]?.price ? `$${data[i].price}` : "";
+				});
+			});
+		});
+
+		const rotate_arrow =
+			load_more_button.querySelector<HTMLElement>(".fa-rotate-right");
+		let rotation = 0;
+
+		rotate_arrow?.addEventListener("click", () => {
+			rotation += 360;
+			if (rotate_arrow) {
+				rotate_arrow.style.transform = `rotate(${rotation}deg)`;
+				rotate_arrow.style.transition = `.5s`;
+			}
+			setTimeout(loadAllProducts, 500);
+		});
+
+		rotate_arrow?.addEventListener("transitionend", () => {
+			load_more_button.style.display = "none";
+		});
+
+		function handleResponsiveDisplay(): void {
+			const rotateArrow =
+				load_more_button.querySelector<HTMLElement>(".fa-rotate-right");
+			const notDesktop = window.innerWidth <= 768;
+			const products = content.querySelectorAll<HTMLElement>(".block");
+
+			products.forEach((p) => p.classList.remove("hidden"));
+
+			if (notDesktop && products.length > 4 && !productsExpanded) {
+				products.forEach((p, i) => {
+					if (i >= 4) p.classList.add("hidden");
+				});
+				load_more_button.style.display = "block";
+			} else {
+				load_more_button.style.display = "none";
+			}
+
+			if (rotateArrow) rotateArrow.style.transition = "none";
+		}
+
+		function loadAllProducts(): void {
+			const hiddenProducts =
+				content.querySelectorAll<HTMLElement>(".block.hidden");
+			hiddenProducts.forEach((p) => p.classList.remove("hidden"));
+			productsExpanded = true;
+		}
+
+		window.addEventListener("resize", handleResponsiveDisplay);
+	} catch (error) {
+		main.classList.remove("home");
+		main.classList.add("menu");
+		loader.textContent = "Something went wrong. Please, refresh the page";
+		console.log("Error fetching data:", error);
+	}
 
 	// Function to render products of a specific category
 	async function renderCategory(category: "coffee" | "tea" | "dessert") {
@@ -451,132 +625,6 @@ menu_link.addEventListener("click", (e: Event) => {
 
 		content.dispatchEvent(new Event("contentchange"));
 	}
-
-	// Add event listeners for category buttons
-	buttons.querySelectorAll<HTMLElement>(".button").forEach((btn) => {
-		btn.addEventListener("click", () => {
-			buttons.querySelectorAll<HTMLElement>(".button").forEach((b) => {
-				b.classList.remove("clicked");
-			});
-			btn.classList.add("clicked");
-		});
-	});
-
-	// Coffee button
-	buttons.querySelector(".coffee")?.addEventListener("click", () => {
-		renderCategory("coffee");
-	});
-
-	// Tea button
-	buttons.querySelector(".tea")?.addEventListener("click", () => {
-		renderCategory("tea");
-	});
-
-	// Dessert button
-	buttons.querySelector(".dessert")?.addEventListener("click", () => {
-		renderCategory("dessert");
-	});
-
-	// Initial load coffee category
-	buttons.querySelector<HTMLElement>(".coffee")?.click();
-
-	// Handling content change event
-	content.addEventListener("contentchange", () => {
-		blocks = Array.from(document.querySelectorAll<HTMLElement>(".block"));
-		productsExpanded = false;
-		handleResponsiveDisplay();
-		getProducts();
-
-		blocks.forEach((block, i) => {
-			block.addEventListener("click", () => {
-				document.body.classList.add("modal-open");
-				backdrop.style.display = "block";
-				modal.style.display = "flex";
-
-				button_S.classList.add("modal_button_active");
-				current_product.size = "s";
-
-				const img = block.querySelector("img");
-				if (!img) return;
-				modal_photo.src = img.src;
-				modal_photo.alt = `modal-photo-${i}`;
-
-				// Filter data based on image src
-				if (modal_photo.src.includes("coffee")) {
-					data = data.filter((el) => el.category === "coffee");
-					current_product.type = "coffee";
-				} else if (modal_photo.src.includes("tea")) {
-					data = data.filter((el) => el.category === "tea");
-					current_product.type = "tea";
-				} else if (modal_photo.src.includes("dessert")) {
-					data = data.filter((el) => el.category === "dessert");
-					current_product.type = "dessert";
-				}
-
-				current_product.index = i;
-				modal_name.textContent = data[i]?.name ?? "";
-				modal_description.textContent = data[i]?.description ?? "";
-
-				S.textContent = data[i]?.sizes.s.size ?? "";
-				M.textContent = data[i]?.sizes.m.size ?? "";
-				L.textContent = data[i]?.sizes.l.size ?? "";
-
-				first_additive.textContent = data[i]?.additives[0]?.name ?? "";
-				second_additive.textContent = data[i]?.additives[1]?.name ?? "";
-				third_additive.textContent = data[i]?.additives[2]?.name ?? "";
-
-				// total_price.textContent = `$${data[i]?.price}`;
-				total_price.textContent = data[i]?.price ? `$${data[i].price}` : "";
-			});
-		});
-	});
-
-	// Rotate arrow button
-	const rotate_arrow =
-		load_more_button.querySelector<HTMLElement>(".fa-rotate-right");
-	let rotation = 0;
-
-	rotate_arrow?.addEventListener("click", () => {
-		rotation += 360;
-		if (rotate_arrow) {
-			rotate_arrow.style.transform = `rotate(${rotation}deg)`;
-			rotate_arrow.style.transition = `.5s`;
-		}
-		setTimeout(loadAllProducts, 500);
-	});
-
-	rotate_arrow?.addEventListener("transitionend", () => {
-		load_more_button.style.display = "none";
-	});
-
-	function handleResponsiveDisplay(): void {
-		const rotateArrow =
-			load_more_button.querySelector<HTMLElement>(".fa-rotate-right");
-		const notDesktop = window.innerWidth <= 768;
-		const products = content.querySelectorAll<HTMLElement>(".block");
-
-		products.forEach((p) => p.classList.remove("hidden"));
-
-		if (notDesktop && products.length > 4 && !productsExpanded) {
-			products.forEach((p, i) => {
-				if (i >= 4) p.classList.add("hidden");
-			});
-			load_more_button.style.display = "block";
-		} else {
-			load_more_button.style.display = "none";
-		}
-
-		if (rotateArrow) rotateArrow.style.transition = "none";
-	}
-
-	function loadAllProducts(): void {
-		const hiddenProducts =
-			content.querySelectorAll<HTMLElement>(".block.hidden");
-		hiddenProducts.forEach((p) => p.classList.remove("hidden"));
-		productsExpanded = true;
-	}
-
-	window.addEventListener("resize", handleResponsiveDisplay);
 });
 
 links.forEach((link, i) => {
