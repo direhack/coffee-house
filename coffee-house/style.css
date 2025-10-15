@@ -301,6 +301,7 @@ a {
 }
 .home .fav_coffee {
   height: 799px;
+  position: relative;
 }
 .home .fav_coffee h2 {
   font-size: 60px;
@@ -415,6 +416,15 @@ a {
 }
 .home .fav_coffee .three-lines .progress-bar.resume::before {
   animation-play-state: running;
+}
+.home .fav_coffee .loader {
+  font-size: 40px;
+  color: #403f3d;
+  font-weight: 600;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
 }
 .home .about {
   margin-top: 200px;
@@ -796,6 +806,13 @@ a {
 .menu h1 span {
   color: #b0907a;
   font-style: italic;
+}
+.menu .second-loader {
+  font-size: 40px;
+  color: #403f3d;
+  font-weight: 600;
+  margin-bottom: 200px;
+  margin-top: 200px;
 }
 .menu .buttons {
   display: flex;
