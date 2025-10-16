@@ -76,6 +76,9 @@ const coffee_src: string[] = [];
 const tea_src: string[] = [];
 const dessert_src: string[] = [];
 const drinks: string[] = [];
+const drinks_names: string[] = [];
+const drinks_info: string[] = [];
+const drink_prices: string[] = [];
 
 // ⚙️ State and Data Variables
 let current: number = 0; // current index for slideshow
@@ -83,11 +86,15 @@ let startX: number = 0; // touch start X coordinate
 let endX: number = 0; // touch end X coordinate
 
 let data: Product[] = []; // fetched product data (type `any` for now)
+let fullData: Product[] = [];
+const filteredData: Product[] = [];
+let dataFavorites: Product[] = [];
 let blocks: HTMLElement[] = []; // some collection of blocks in UI (usage not shown here)
 
 let productsExpanded: boolean = false;
 let isTransitioning: boolean = false;
 let isOpen: boolean = false;
+let imageName: string;
 
 // 🛒 Current Product Info
 interface CurrentProduct {
@@ -119,22 +126,26 @@ const isHome = (): boolean => main.classList.contains("home");
 const backup: ChildNode[] = Array.from(main.childNodes);
 
 // Types
-type SizeKey = "s" | "m" | "l";
+type SizeKey = "s" | "m" | "l" | "xl" | "xxl";
 
 type Size = {
 	size: string;
 	"add-price": string;
+	discountPrice: string;
 };
 
 type Additive = {
 	name: string;
 	"add-price": string;
+	discountPrice: string;
 };
 
 type Product = {
+	id: number;
 	name: string;
 	description: string;
 	price: string;
+	discountPrice: string;
 	category: string;
 	sizes: Record<SizeKey, Size>;
 	additives: Additive[];
@@ -154,45 +165,72 @@ async function getFavorites(): Promise<void> {
 			loader.textContent = "Something went wrong. Please, refresh the page";
 			throw new Error("Network response was not ok");
 		}
-		data = await response.json();
+		const result = await response.json();
+		dataFavorites = result.data;
 		loader.style.display = "none";
 		slider.style.display = "flex";
 		three_lines.style.display = "flex";
+		drinks.push(
+			...dataFavorites.map((product) => `images/slider_${product.id}.png`)
+		);
+		drinks_names.push(...dataFavorites.map((p) => p.name));
+		drinks_info.push(...dataFavorites.map((p) => p.description));
+		drink_prices.push(...dataFavorites.map((p) => `$${p.price}`));
+		render();
 	} catch (error) {
 		console.log("Error fetching data:", error);
 	}
 }
 
-getFavorites(); // add to the end
+async function getProducts(): Promise<boolean> {
+	const loader = document.createElement("div");
+	loader.className = "second-loader";
+	loader.textContent = "Loading...";
+	main.appendChild(loader);
+	console.log("[getProducts] Starting fetch");
+	try {
+		const response = await fetch(
+			"http://coffee-shop-be.eu-central-1.elasticbeanstalk.com/products"
+		);
+		console.log("[getProducts] Response received", response);
+		if (!response.ok) {
+			console.log("[getProducts] Response NOT OK");
+			throw new Error("Network response was no ok");
+		}
+		const result = await response.json();
+		console.log("[getProducts] Data received", result);
+		fullData = result.data;
+		data = result.data;
 
-async function getAllProducts(): Promise<void> {
-	const response = await fetch(
-		"http://coffee-shop-be.eu-central-1.elasticbeanstalk.com/products"
-	);
-	if (!response.ok) {
-		throw new Error("Network response was no ok");
+		return true;
+	} catch (error) {
+		console.log("[getProducts] Catch block hit:", error);
+		main.classList.remove("home");
+		main.classList.add("menu");
+
+		main.innerHTML = "";
+
+		const h1 = document.createElement("h1");
+		h1.innerHTML = `Behind each of our cups <br />
+	              hides an <span>amazing surprise</span>`;
+
+		const errorDiv = document.createElement("div");
+		errorDiv.className = "fetch-error";
+		errorDiv.textContent = "Something went wrong. Please, refresh the page";
+
+		main.appendChild(h1);
+		main.appendChild(errorDiv);
+		console.log("Error fetching data:", error);
+		return false;
+	} finally {
+		console.log("[getProducts] Finally block");
+		if (main.contains(loader)) {
+			main.removeChild(loader);
+		}
 	}
-	data = await response.json();
-	console.log(data);
 }
 
 //
-
-async function getProducts(): Promise<void> {
-	try {
-		const response = await fetch("products.json");
-		if (!response.ok) {
-			throw new Error("Network response was not ok");
-		}
-		data = await response.json();
-	} catch (error) {
-		console.error("Error fetching data:", error);
-	}
-}
-
-for (let i = 1; i <= 3; i++) {
-	drinks.push(`assets/coffee-slider-${i}.png`);
-}
 
 for (let i = 1; i <= 8; i++) {
 	coffee_src.push(`assets/coffee-${i}.jpg`);
@@ -216,11 +254,6 @@ function createImage(): void {
 }
 
 function createDrinkName(): void {
-	const drinks_names = [
-		"S’mores Frappuccino",
-		"Caramel Macchiato",
-		"Ice coffee",
-	];
 	const drink_name = document.createElement("h3");
 	drink_name.textContent = drinks_names[current] as string;
 	drink_name.className = "drink-name";
@@ -228,11 +261,6 @@ function createDrinkName(): void {
 }
 
 function createDrinkInfo(): void {
-	const drinks_info = [
-		"This new drink takes an espresso and mixes it with brown sugar and cinnamon before being topped with oat milk.",
-		"Fragrant and unique classic espresso with rich caramel-peanut syrup, with cream under whipped thick foam.",
-		"A popular summer drink that tones and invigorates. Prepared from coffee, milk and ice.",
-	];
 	const drink_info = document.createElement("p");
 	drink_info.textContent = drinks_info[current] as string;
 	drink_info.className = "drink-info";
@@ -240,7 +268,6 @@ function createDrinkInfo(): void {
 }
 
 function createDrinkPrice(): void {
-	const drink_prices = ["$5.50", "$5.00", "$4.50"];
 	const drink_price = document.createElement("p");
 	drink_price.textContent = drink_prices[current] as string;
 	drink_price.className = "price";
@@ -397,183 +424,46 @@ menu_link.addEventListener("click", async (e: Event) => {
 	menu_link.style.borderBottom = "2px solid #403f3d";
 	cross.click();
 	//
-	main.innerHTML = "";
-	const h1 = document.createElement("h1");
-	h1.innerHTML = `Behind each of our cups <br />
-                  hides an <span>amazing surprise</span>`;
-	main.appendChild(h1);
 
-	const loader = document.createElement("div");
-	loader.className = "second-loader";
-	loader.textContent = "Loading...";
-	main.appendChild(loader);
-
-	let buttons: HTMLDivElement,
-		content: HTMLDivElement,
-		load_more_button: HTMLDivElement; // Put them above
-
-	try {
-		await getAllProducts();
-		main.removeChild(loader);
-
-		buttons = document.createElement("div");
-		content = document.createElement("div");
-		load_more_button = document.createElement("div");
-
-		buttons.innerHTML = `
-    <div class="button coffee">
-      <img src="assets/coffee.png" alt="" />
-      <p>Coffee</p>
-    </div>
-    <div class="button tea">
-      <img src="assets/tea.png" alt="" />
-      <p>Tea</p>
-    </div>
-    <div class="button dessert">
-      <img src="assets/dessert.png" alt="" />
-      <p>Dessert</p>
-    </div>`;
-
-		load_more_button.innerHTML = `<i class="fa-solid fa-rotate-right"></i>`;
-
-		main.classList.remove("home");
-		main.classList.add("menu");
-		buttons.classList.add("buttons");
-		content.classList.add("content");
-		load_more_button.classList.add("load-button");
-
-		main.appendChild(buttons);
-		main.appendChild(content);
-		main.appendChild(load_more_button);
-
-		buttons.querySelectorAll<HTMLElement>(".button").forEach((btn) => {
-			btn.addEventListener("click", () => {
-				buttons.querySelectorAll<HTMLElement>(".button").forEach((b) => {
-					b.classList.remove("clicked");
-				});
-				btn.classList.add("clicked");
-			});
-		});
-
-		// Coffee button
-		buttons.querySelector(".coffee")?.addEventListener("click", () => {
-			renderCategory("coffee");
-		});
-
-		// Tea button
-		buttons.querySelector(".tea")?.addEventListener("click", () => {
-			renderCategory("tea");
-		});
-
-		// Dessert button
-		buttons.querySelector(".dessert")?.addEventListener("click", () => {
-			renderCategory("dessert");
-		});
-
-		// Initial load coffee category
-		buttons.querySelector<HTMLElement>(".coffee")?.click();
-
-		// Handling content change event
-		content.addEventListener("contentchange", () => {
-			blocks = Array.from(document.querySelectorAll<HTMLElement>(".block"));
-			productsExpanded = false;
-			handleResponsiveDisplay();
-			getProducts();
-
-			blocks.forEach((block, i) => {
-				block.addEventListener("click", () => {
-					document.body.classList.add("modal-open");
-					backdrop.style.display = "block";
-					modal.style.display = "flex";
-
-					button_S.classList.add("modal_button_active");
-					current_product.size = "s";
-
-					const img = block.querySelector("img");
-					if (!img) return;
-					modal_photo.src = img.src;
-					modal_photo.alt = `modal-photo-${i}`;
-
-					// Filter data based on image src
-					if (modal_photo.src.includes("coffee")) {
-						data = data.filter((el) => el.category === "coffee");
-						current_product.type = "coffee";
-					} else if (modal_photo.src.includes("tea")) {
-						data = data.filter((el) => el.category === "tea");
-						current_product.type = "tea";
-					} else if (modal_photo.src.includes("dessert")) {
-						data = data.filter((el) => el.category === "dessert");
-						current_product.type = "dessert";
-					}
-
-					current_product.index = i;
-					modal_name.textContent = data[i]?.name ?? "";
-					modal_description.textContent = data[i]?.description ?? "";
-
-					S.textContent = data[i]?.sizes.s.size ?? "";
-					M.textContent = data[i]?.sizes.m.size ?? "";
-					L.textContent = data[i]?.sizes.l.size ?? "";
-
-					first_additive.textContent = data[i]?.additives[0]?.name ?? "";
-					second_additive.textContent = data[i]?.additives[1]?.name ?? "";
-					third_additive.textContent = data[i]?.additives[2]?.name ?? "";
-
-					total_price.textContent = data[i]?.price ? `$${data[i].price}` : "";
-				});
-			});
-		});
-
-		const rotate_arrow =
-			load_more_button.querySelector<HTMLElement>(".fa-rotate-right");
-		let rotation = 0;
-
-		rotate_arrow?.addEventListener("click", () => {
-			rotation += 360;
-			if (rotate_arrow) {
-				rotate_arrow.style.transform = `rotate(${rotation}deg)`;
-				rotate_arrow.style.transition = `.5s`;
-			}
-			setTimeout(loadAllProducts, 500);
-		});
-
-		rotate_arrow?.addEventListener("transitionend", () => {
-			load_more_button.style.display = "none";
-		});
-
-		function handleResponsiveDisplay(): void {
-			const rotateArrow =
-				load_more_button.querySelector<HTMLElement>(".fa-rotate-right");
-			const notDesktop = window.innerWidth <= 768;
-			const products = content.querySelectorAll<HTMLElement>(".block");
-
-			products.forEach((p) => p.classList.remove("hidden"));
-
-			if (notDesktop && products.length > 4 && !productsExpanded) {
-				products.forEach((p, i) => {
-					if (i >= 4) p.classList.add("hidden");
-				});
-				load_more_button.style.display = "block";
-			} else {
-				load_more_button.style.display = "none";
-			}
-
-			if (rotateArrow) rotateArrow.style.transition = "none";
-		}
-
-		function loadAllProducts(): void {
-			const hiddenProducts =
-				content.querySelectorAll<HTMLElement>(".block.hidden");
-			hiddenProducts.forEach((p) => p.classList.remove("hidden"));
-			productsExpanded = true;
-		}
-
-		window.addEventListener("resize", handleResponsiveDisplay);
-	} catch (error) {
-		main.classList.remove("home");
-		main.classList.add("menu");
-		loader.textContent = "Something went wrong. Please, refresh the page";
-		console.log("Error fetching data:", error);
+	if (data.length === 0) {
+		const success = await getProducts();
+		if (!success) return;
 	}
+
+	const h1 = document.createElement("h1");
+	const buttons = document.createElement("div");
+	const content = document.createElement("div");
+	const load_more_button = document.createElement("div");
+
+	h1.innerHTML = `Behind each of our cups <br />
+	              hides an <span>amazing surprise</span>`;
+	buttons.innerHTML = `
+		<div class="button coffee">
+		  <img src="assets/coffee.png" alt="" />
+		  <p>Coffee</p>
+		</div>
+		<div class="button tea">
+		  <img src="assets/tea.png" alt="" />
+		  <p>Tea</p>
+		</div>
+		<div class="button dessert">
+		  <img src="assets/dessert.png" alt="" />
+		  <p>Dessert</p>
+		</div>`;
+	load_more_button.innerHTML = `<i class="fa-solid fa-rotate-right"></i>`;
+
+	main.classList.remove("home");
+	main.classList.add("menu");
+	buttons.classList.add("buttons");
+	content.classList.add("content");
+	load_more_button.classList.add("load-button");
+
+	main.innerHTML = "";
+
+	main.appendChild(h1);
+	main.appendChild(buttons);
+	main.appendChild(content);
+	main.appendChild(load_more_button);
 
 	// Function to render products of a specific category
 	async function renderCategory(category: "coffee" | "tea" | "dessert") {
@@ -583,7 +473,7 @@ menu_link.addEventListener("click", async (e: Event) => {
 		const activeButton = buttons.querySelector(`.${category}`) as HTMLElement;
 		activeButton.classList.add("disable_cursor");
 
-		await getProducts(); // assuming this updates global `data`
+		// await getProducts(); // assuming this updates global `data`
 
 		content.innerHTML = "";
 		const filteredData = data.filter((el) => el.category === category);
@@ -625,6 +515,129 @@ menu_link.addEventListener("click", async (e: Event) => {
 
 		content.dispatchEvent(new Event("contentchange"));
 	}
+
+	buttons.querySelectorAll<HTMLElement>(".button").forEach((btn) => {
+		btn.addEventListener("click", () => {
+			buttons.querySelectorAll<HTMLElement>(".button").forEach((b) => {
+				b.classList.remove("clicked");
+			});
+			btn.classList.add("clicked");
+		});
+	});
+
+	// Coffee button
+	buttons.querySelector(".coffee")?.addEventListener("click", () => {
+		renderCategory("coffee");
+	});
+
+	// Tea button
+	buttons.querySelector(".tea")?.addEventListener("click", () => {
+		renderCategory("tea");
+	});
+
+	// Dessert button
+	buttons.querySelector(".dessert")?.addEventListener("click", () => {
+		renderCategory("dessert");
+	});
+
+	// Initial load coffee category
+	buttons.querySelector<HTMLElement>(".coffee")?.click();
+
+	// Handling content change event
+	content.addEventListener("contentchange", () => {
+		blocks = Array.from(document.querySelectorAll<HTMLElement>(".block"));
+		productsExpanded = false;
+		handleResponsiveDisplay();
+		// getProducts();
+
+		blocks.forEach((block, i) => {
+			block.addEventListener("click", () => {
+				document.body.classList.add("modal-open");
+				backdrop.style.display = "block";
+				modal.style.display = "flex";
+
+				button_S.classList.add("modal_button_active");
+				current_product.size = "s";
+
+				const img = block.querySelector("img");
+				if (!img) return;
+				modal_photo.src = img.src;
+				modal_photo.alt = `modal-photo-${i}`;
+
+				// Filter data based on image src
+				if (modal_photo.src.includes("coffee")) {
+					data = data.filter((el) => el.category === "coffee");
+					current_product.type = "coffee";
+				} else if (modal_photo.src.includes("tea")) {
+					data = data.filter((el) => el.category === "tea");
+					current_product.type = "tea";
+				} else if (modal_photo.src.includes("dessert")) {
+					data = data.filter((el) => el.category === "dessert");
+					current_product.type = "dessert";
+				}
+
+				current_product.index = i;
+				modal_name.textContent = data[i]?.name ?? "";
+				modal_description.textContent = data[i]?.description ?? "";
+
+				S.textContent = data[i]?.sizes.s.size ?? "";
+				M.textContent = data[i]?.sizes.m.size ?? "";
+				L.textContent = data[i]?.sizes.l.size ?? "";
+
+				first_additive.textContent = data[i]?.additives[0]?.name ?? "";
+				second_additive.textContent = data[i]?.additives[1]?.name ?? "";
+				third_additive.textContent = data[i]?.additives[2]?.name ?? "";
+
+				total_price.textContent = data[i]?.price ? `$${data[i].price}` : "";
+			});
+		});
+	});
+
+	const rotate_arrow =
+		load_more_button.querySelector<HTMLElement>(".fa-rotate-right");
+	let rotation = 0;
+
+	rotate_arrow?.addEventListener("click", () => {
+		rotation += 360;
+		if (rotate_arrow) {
+			rotate_arrow.style.transform = `rotate(${rotation}deg)`;
+			rotate_arrow.style.transition = `.5s`;
+		}
+		setTimeout(loadAllProducts, 500);
+	});
+
+	rotate_arrow?.addEventListener("transitionend", () => {
+		load_more_button.style.display = "none";
+	});
+
+	function handleResponsiveDisplay(): void {
+		const rotateArrow =
+			load_more_button.querySelector<HTMLElement>(".fa-rotate-right");
+		const notDesktop = window.innerWidth <= 768;
+		const products = content.querySelectorAll<HTMLElement>(".block");
+
+		products.forEach((p) => p.classList.remove("hidden"));
+
+		if (notDesktop && products.length > 4 && !productsExpanded) {
+			products.forEach((p, i) => {
+				if (i >= 4) p.classList.add("hidden");
+			});
+			load_more_button.style.display = "block";
+		} else {
+			load_more_button.style.display = "none";
+		}
+
+		if (rotateArrow) rotateArrow.style.transition = "none";
+	}
+
+	function loadAllProducts(): void {
+		const hiddenProducts =
+			content.querySelectorAll<HTMLElement>(".block.hidden");
+		hiddenProducts.forEach((p) => p.classList.remove("hidden"));
+		productsExpanded = true;
+	}
+
+	window.addEventListener("resize", handleResponsiveDisplay);
 });
 
 links.forEach((link, i) => {
@@ -824,9 +837,6 @@ close.addEventListener("click", () => {
 	].forEach((btn) => {
 		btn.classList.remove("modal_button_active");
 	});
-
-	getProducts();
 });
 
-render(); // initial render
-getProducts();
+getFavorites(); //initial
