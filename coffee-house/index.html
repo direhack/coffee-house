@@ -31,7 +31,13 @@
 						<li><a class="link" href="#contact">Contact us</a></li>
 					</ul>
 				</nav>
-				<a class="menu_link">Menu <i class="fa-solid fa-mug-hot"></i></a>
+				<div class="menu_cart">
+					<a class="cart_button">
+						<i class="fa-solid fa-cart-shopping"></i>
+						<span class="cart_number"></span>
+					</a>
+					<a class="menu_link">Menu <i class="fa-solid fa-mug-hot"></i></a>
+				</div>
 				<div class="burger" id="burger">
 					<i class="fa-solid fa-bars"></i>
 					<i class="fa-solid fa-xmark"></i>
@@ -187,40 +193,15 @@
 		<div class="backdrop"></div>
 
 		<div class="modal">
+			<div class="close">X</div>
 			<img class="modal_photo" src="..." alt="modal_photo" />
 			<div class="info">
 				<h3 class="name">...</h3>
 				<p class="description"></p>
 				<p class="size">Size</p>
-				<div class="sizes_block">
-					<div class="small">
-						<p class="s">S</p>
-						<p class="size_s"></p>
-					</div>
-					<div class="medium">
-						<p class="m">M</p>
-						<p class="size_m"></p>
-					</div>
-					<div class="large">
-						<p class="l">L</p>
-						<p class="size_l"></p>
-					</div>
-				</div>
+				<div class="sizes_block"></div>
 				<p class="additives">Additives</p>
-				<div class="additives_block">
-					<div class="first">
-						<p class="additive_one">1</p>
-						<p class="first_additive"></p>
-					</div>
-					<div class="second">
-						<p class="additive_two">2</p>
-						<p class="second_additive"></p>
-					</div>
-					<div class="third">
-						<p class="additive_three">3</p>
-						<p class="third_additive"></p>
-					</div>
-				</div>
+				<div class="additives_block"></div>
 				<div class="total_price_block">
 					<p class="total">Total:</p>
 					<p class="total_price"></p>
@@ -234,7 +215,7 @@
 					</p>
 				</div>
 			</div>
-			<div class="close">Close</div>
+			<div class="add_cart">Add to cart</div>
 		</div>
 		<script type="module" src="script.js"></script>
 	</body>
