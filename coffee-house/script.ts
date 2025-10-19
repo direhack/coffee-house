@@ -92,6 +92,7 @@ const drinks: string[] = [];
 const drinks_names: string[] = [];
 const drinks_info: string[] = [];
 const drink_prices: string[] = [];
+const mainClasses: string[] = ["home", "menu", "cart", "login", "register"];
 
 // ⚙️ State and Data Variables
 let current: number = 0; // current index for slideshow
@@ -114,19 +115,26 @@ let imageName: string; // fot github pages to work I need to do like I did with 
 // 🛒 Current Product Info
 interface CurrentProduct {
 	adds: number[];
+	totalPrice: number;
+	addsTypes: string[];
 	size: keyof (typeof data)[0]["sizes"];
+	productSize: string;
 	index: number;
 	id: string;
 	type: string;
 }
-
-const current_product: CurrentProduct = {
+let current_product: CurrentProduct = {
 	adds: [],
+	totalPrice: 0,
+	addsTypes: [],
 	size: "s",
+	productSize: "",
 	index: 0,
 	id: "1",
 	type: "coffee",
 };
+
+const current_products: CurrentProduct[] = [];
 
 // 🔁 Constants & Timer Variables
 const INTERVAL: number = 3000;
@@ -248,7 +256,7 @@ async function getProducts(): Promise<boolean> {
 		return true;
 	} catch (error) {
 		console.log("[getProducts] Catch block hit:", error);
-		main.classList.remove("home");
+		main.classList.remove(...mainClasses);
 		main.classList.add("menu");
 
 		main.innerHTML = "";
@@ -478,9 +486,17 @@ menu_link.addEventListener("click", async (e: Event) => {
 	target.classList.add("disable_cursor");
 
 	menu_link.style.borderBottom = "2px solid #403f3d";
-	// cart_button.style.display = "inline";
+	// const cart = JSON.parse(localStorage.getItem("cart") ?? "[]");
+	// const storedCurrentProducts = localStorage.getItem("current_products");
+	// if (storedCurrentProducts?.length === 0) cart_button.style.display = "none";
 	cart_button.classList.remove("disable_cursor");
 	cart_button.style.borderBottom = "";
+
+	const cart = JSON.parse(localStorage.getItem("cart") ?? "[]");
+	if (cart.length === 0) {
+		cart_button.style.display = "none";
+	}
+
 	cross.click();
 	//
 
@@ -511,7 +527,7 @@ menu_link.addEventListener("click", async (e: Event) => {
 		</div>`;
 	load_more_button.innerHTML = `<i class="fa-solid fa-rotate-right"></i>`;
 
-	main.classList.remove("home");
+	main.classList.remove(...mainClasses);
 	main.classList.add("menu");
 	buttons.classList.add("buttons");
 	content.classList.add("content");
@@ -611,11 +627,22 @@ menu_link.addEventListener("click", async (e: Event) => {
 			block.addEventListener("click", async () => {
 				const img = block.querySelector("img");
 				if (!img) return;
+
+				current_product = {
+					adds: [],
+					totalPrice: 0,
+					addsTypes: [],
+					size: "s",
+					productSize: "",
+					index: i,
+					id: img.src.split("/").pop()?.split(".")[0] || "",
+					type: current_product.type, // Preserve the current category
+				};
+
 				modal_photo.src = img.src;
 				modal_photo.alt = `modal-photo-${i}`;
 				current_product.id =
 					modal_photo.src.split("/").pop()?.split(".")[0] || "";
-				// try {
 				document.body.classList.add("modal-open");
 				backdrop.style.display = "block";
 				product = await getProduct(current_product.id);
@@ -627,30 +654,18 @@ menu_link.addEventListener("click", async (e: Event) => {
 				// backdrop.removeChild(loader);
 				// console.log(product);
 				modal.style.display = "flex";
-
-				// document
-				// 	.querySelector(".modal .small")
-				// 	?.classList.add("modal_button_active");
-				// current_product.size = "s";
 				modal_name.textContent = product.name;
 				modal_description.textContent = product.description;
 
-				current_product.adds = [];
+				// current_product.adds = [];
+
 				current_product.index = i;
 
 				createSizes();
-
-				// S.textContent = product.sizes.s.size ?? "";
-				// M.textContent = product.sizes.m.size ?? "";
-				// L.textContent = product.sizes.l.size ?? "";
-
 				createAdditives();
-
-				//		first_additive.textContent = product.additives[0]?.name ?? "";
-				//	second_additive.textContent = product.additives[1]?.name ?? "";
-				//	third_additive.textContent = product.additives[2]?.name ?? "";
-
 				total_price.textContent = product.price ? `$${product.price}` : "";
+				current_product.totalPrice = parseFloat(product.price);
+				current_product.productSize = product.sizes[current_product.size].size;
 				// } catch (error) {
 				// 	const err = document.createElement("div");
 				// 	err.textContent = "Something went wrong. Please, refresh the page";
@@ -702,7 +717,9 @@ menu_link.addEventListener("click", async (e: Event) => {
 			div.addEventListener("click", () => {
 				div.classList.toggle("modal_button_active");
 				// filter();
-				additiveFilter(i);
+				additiveFilter(i, additive.name);
+
+				// current_product.addsTypes.push(additive.name);
 				updateTotal();
 			});
 
@@ -751,42 +768,14 @@ menu_link.addEventListener("click", async (e: Event) => {
 				sizeDivs.forEach((b) => b.classList.remove("modal_button_active"));
 				div.classList.add("modal_button_active");
 				current_product.size = key;
+				current_product.productSize = size.size;
+				console.log(current_product.productSize);
 				// filter();
 				updateTotal();
 			});
 		});
-
-		// btn.addEventListener("click", () => {
-		// 	sizeDivs.forEach((b) => b.classList.remove("modal_button_active"));
-		// 	btn.classList.add("modal_button_active");
-
-		// 	current_product.size = p1s[i] as SizeKey;
-		// 	console.log(current_product.size);
-		// 	filter();
-		// 	updateTotal();
-		// });
-		// });
-
 		sizeDivs[0]?.classList.add("modal_button_active");
 		current_product.size = "s";
-
-		// 		button_S.addEventListener("click", () => {
-		// 	current_product.size = "s";
-		// 	filter();
-		// 	updateTotal();
-		// });
-
-		// button_M.addEventListener("click", () => {
-		// 	current_product.size = "m";
-		// 	filter();
-		// 	updateTotal();
-		// });
-
-		// button_L.addEventListener("click", () => {
-		// 	current_product.size = "l";
-		// 	filter();
-		// 	updateTotal();
-		// });
 	};
 
 	const rotate_arrow =
@@ -842,8 +831,11 @@ links.forEach((link, i) => {
 			if (i === 0) cross.click();
 			menu_link.style.borderBottom = "";
 			menu_link.classList.remove("disable_cursor");
-			cart_button.style.display = "none";
-			main.classList.remove("menu");
+			const cart = JSON.parse(localStorage.getItem("cart") ?? "[]");
+			if (cart.length === 0) cart_button.style.display = "none";
+			cart_button.style.borderBottom = "";
+			cart_button.classList.remove("disable_cursor");
+			main.classList.remove(...mainClasses);
 			main.classList.add("home");
 			main.replaceChildren(...backup);
 			document.querySelector<HTMLVideoElement>("video")!.play();
@@ -862,7 +854,7 @@ burger_menu_links.forEach((link, i) => {
 		} else if (i !== 3) {
 			cross.click();
 			menu_link.classList.remove("disable_cursor");
-			main.classList.remove("menu");
+			main.classList.remove(...mainClasses);
 			main.classList.add("home");
 			main.replaceChildren(...backup);
 			document.querySelector<HTMLVideoElement>("video")!.play();
@@ -939,17 +931,20 @@ const updateTotal = (): void => {
 	const sizeAdd = parseFloat(
 		product?.sizes?.[current_product.size]?.["price"] ?? "0"
 	);
-	console.log(sizeAdd);
+	// console.log(sizeAdd);
 
 	const addsSum = current_product.adds.reduce(
 		(s, i) => s + parseFloat(product?.additives?.[i]?.["price"] ?? "0"),
 		0
 	);
 
-	console.log(addsSum);
+	// console.log(addsSum);
 
 	const total = sizeAdd + addsSum;
+
 	total_price.textContent = `$${total.toFixed(2)}`;
+
+	current_product.totalPrice = total;
 };
 
 // const filter = (): void => {
@@ -961,13 +956,19 @@ const updateTotal = (): void => {
 // 		filteredData = fullData.filter((el) => el.category === "dessert");
 // };
 
-const additiveFilter = (num: number): void => {
-	if (current_product.adds.includes(num))
+const additiveFilter = (num: number, additiveName: string): void => {
+	if (current_product.adds.includes(num)) {
 		current_product.adds = current_product.adds.filter(
 			(additive) => additive !== num
 		);
-	else {
+		current_product.addsTypes = current_product.addsTypes.filter(
+			(additive) => additive !== additiveName
+		);
+		// console.log(current_product.addsTypes);
+	} else {
 		current_product.adds.push(num);
+		current_product.addsTypes.push(additiveName);
+		// console.log(current_product.addsTypes);
 	}
 };
 
@@ -1021,8 +1022,19 @@ close.addEventListener("click", () => {
 	].forEach((btn) => {
 		btn?.classList.remove("modal_button_active");
 	});
-	// current_product.adds = [];
-	// product = null;
+
+	current_product = {
+		adds: [],
+		totalPrice: 0,
+		addsTypes: [],
+		size: "s",
+		productSize: "",
+		index: 0,
+		id: "",
+		type: current_product.type,
+	};
+	current_product.adds = [];
+	product = null;
 });
 
 document.addEventListener("keydown", (e: KeyboardEvent) => {
@@ -1032,8 +1044,6 @@ document.addEventListener("keydown", (e: KeyboardEvent) => {
 });
 
 add_cart.addEventListener("click", () => {
-	close.click();
-	cart_button.style.display = "inline";
 	addToCart();
 	// cart_button.classList.remove("disable_cursor");
 	// cart_button.style.borderBottom = "";
@@ -1048,7 +1058,10 @@ const addToCart = (): void => {
 
 	if (product) {
 		cart.push(product);
+		current_products.push(JSON.parse(JSON.stringify(current_product)));
+		console.log(current_products);
 		localStorage.setItem("cart", JSON.stringify(cart));
+		localStorage.setItem("current_products", JSON.stringify(current_products));
 	}
 
 	// } catch (error) {
@@ -1062,7 +1075,12 @@ const addToCart = (): void => {
 	count++;
 	localStorage.setItem("cartCount", count.toString());
 
+	// console.log(current_product.totalPrice);
+
 	updateCartNumber();
+
+	close.click();
+	cart_button.style.display = "inline";
 };
 
 const updateCartNumber = (): void => {
@@ -1076,13 +1094,15 @@ const updateCartNumber = (): void => {
 
 const updateCart = (): void => {
 	const cart_products = document.querySelector(".cart_products") as HTMLElement;
+	const cart_total_price = document.querySelector(".cart_price") as HTMLElement;
 	cart_products.innerHTML = "";
 	const cart = localStorage.getItem("cart");
+	let totalCartPrice = 0;
 
 	if (cart) {
 		const cartProducts: Product[] = JSON.parse(cart);
 
-		cartProducts.forEach((product) => {
+		cartProducts.forEach((product, i) => {
 			const trash: HTMLElement = document.createElement("i");
 			const productInfo: HTMLElement = document.createElement("div");
 			const productRow: HTMLElement = document.createElement("div");
@@ -1093,32 +1113,60 @@ const updateCart = (): void => {
 			trash.classList.add("fa-solid", "fa-trash");
 			productInfo.className = "product_info";
 			productRow.className = "product_row";
+			product_name.className = "product_name";
+			product_price.className = "product_price";
 			img.src =
 				product.category === "coffee"
 					? `images/${product.id}.jpg `
 					: `images/${product.id}.png`;
 
-			product_name.textContent = product.name;
-			product_price.textContent = `$${product.price}`;
+			img.alt = `cart-product-${i}`;
 
-			console.log(current_product);
+			product_name.textContent = product.name;
+
+			const productCustomization = current_products[i] || {
+				productSize: "N/A",
+				addsTypes: [],
+				totalPrice: parseFloat(product.price || "0"),
+			};
+
+			product_price.textContent = `$${productCustomization.totalPrice.toFixed(
+				2
+			)}`;
+
+			totalCartPrice += productCustomization.totalPrice;
+
+			// console.log(current_product);
 
 			trash.addEventListener("click", () => {
-				const indexToRemove = cartProducts.findIndex(
-					(p) => p.id === product.id
+				cartProducts.splice(i, 1);
+				current_products.splice(i, 1);
+
+				localStorage.setItem("cart", JSON.stringify(cartProducts));
+				localStorage.setItem(
+					"current_products",
+					JSON.stringify(current_products)
 				);
 
-				if (indexToRemove !== -1) {
-					cartProducts.splice(indexToRemove, 1);
-					localStorage.setItem("cart", JSON.stringify(cartProducts));
+				let count = parseInt(localStorage.getItem("cartCount") || "0");
+				count = Math.max(0, count - 1);
+				localStorage.setItem("cartCount", count.toString());
+				// const indexToRemove = cartProducts.findIndex(
+				// 	(p) => p.id === product.id
+				// );
 
-					let count = parseInt(localStorage.getItem("cartCount") || "0");
-					count = Math.max(0, count - 1);
-					localStorage.setItem("cartCount", count.toString());
+				// if (indexToRemove !== -1) {
+				// 	cartProducts.splice(indexToRemove, 1);
+				// 	// current_products.splice(i, 1)
+				// 	localStorage.setItem("cart", JSON.stringify(cartProducts));
 
-					updateCartNumber();
-					updateCart();
-				}
+				// 	let count = parseInt(localStorage.getItem("cartCount") || "0");
+				// 	count = Math.max(0, count - 1);
+				// 	localStorage.setItem("cartCount", count.toString());
+
+				updateCartNumber();
+				updateCart();
+				// }
 
 				// const updatedCart = cartProducts.filter((p) => p.id !== product.id);
 				// localStorage.setItem("cart", JSON.stringify(updatedCart));
@@ -1127,20 +1175,48 @@ const updateCart = (): void => {
 				// localStorage.setItem("cartCount", newCount.toString());
 			});
 
+			const product_info_div = document.createElement("div");
+			product_info_div.className = "product_info_div";
+			const product_type = document.createElement("div");
+			product_type.className = "product_type";
+			const sizeSpan = document.createElement("span");
+			sizeSpan.textContent = productCustomization.productSize;
+			sizeSpan.className = "product_size";
+
+			const spans: HTMLElement[] = [sizeSpan];
+
+			productCustomization.addsTypes.forEach((addType) => {
+				const addSpan = document.createElement("span");
+				addSpan.className = "product_additive";
+				addSpan.textContent = addType;
+				spans.push(addSpan);
+			});
+
+			spans.forEach((span, i) => {
+				if (i < spans.length - 1) {
+					span.textContent += ",";
+				}
+				product_type.appendChild(span);
+			});
+
 			productInfo.appendChild(trash);
 			productInfo.appendChild(img);
-			productInfo.appendChild(product_name);
+			product_info_div.appendChild(product_name);
+			product_info_div.appendChild(product_type);
+			productInfo.appendChild(product_info_div);
 
 			productRow.appendChild(productInfo);
 			productRow.appendChild(product_price);
 
 			cart_products?.appendChild(productRow);
 		});
+
+		cart_total_price.textContent = `$${totalCartPrice.toFixed(2)}`;
 	}
 };
 
 cart_button.addEventListener("click", () => {
-	main.classList.remove("menu");
+	main.classList.remove(...mainClasses);
 	main.classList.add("cart");
 	cart_button.classList.add("disable_cursor");
 	menu_link.classList.remove("disable_cursor");
@@ -1158,6 +1234,7 @@ cart_button.addEventListener("click", () => {
 	const div2 = document.createElement("div");
 	const p1 = document.createElement("p");
 	const p2 = document.createElement("p");
+
 	p1.textContent = "Total:";
 	p2.textContent = "$0.00";
 	p1.className = "cart_total";
@@ -1179,65 +1256,766 @@ cart_button.addEventListener("click", () => {
 	const buttons = document.createElement("div");
 	buttons.className = "cart_buttons";
 
-	buttons.appendChild(sign_in);
-	buttons.appendChild(registration);
-
 	main.appendChild(h1);
 	main.appendChild(div2);
 	main.appendChild(div);
-	main.appendChild(buttons);
 
-	// sign_in.addEventListener("click", () => {
-	// 	main.classList.remove("cart");
-	// 	main.classList.add("login");
+	if (localStorage.auth === "signed-in") {
+		// payment option
+		// address
 
-	// 	main.innerHTML = "";
+		const div3 = document.createElement("div");
+		const div4 = document.createElement("div");
+		const p3 = document.createElement("p");
+		const p4 = document.createElement("p");
+		const p5 = document.createElement("p");
+		const p6 = document.createElement("p");
 
-	// 	const h1 = document.createElement("h1");
-	// 	h1.textContent = "Sign In";
+		p3.textContent = "Address:";
+		p4.textContent = "localstorage";
+		p5.textContent = "Pay by:";
+		p6.textContent = "localstorage";
 
-	// 	const label_login = document.createElement("label");
-	// 	const label_password = document.createElement("label");
-	// 	const input_login = document.createElement("input");
-	// 	const input_password = document.createElement("input");
-	// 	const sign_in = document.createElement("div");
+		div3.className = "address";
+		div4.className = "pay_by";
 
-	// 	label_login.textContent = "Login";
-	// 	label_password.textContent = "Password";
+		const confirm_order = document.createElement("div");
+		confirm_order.textContent = "Confirm";
+		confirm_order.className = "confirm_order";
 
-	// 	input_login.placeholder = "Placeholder";
-	// 	input_password.placeholder = "Placeholder";
+		div3.appendChild(p3);
+		div3.appendChild(p4);
+		div4.appendChild(p5);
+		div4.appendChild(p6);
 
-	// 	input_password.type = "password";
+		main.appendChild(div3);
+		main.appendChild(div4);
 
-	// 	label_login.className = "label_login";
-	// 	label_password.className = "label_password";
+		main.appendChild(confirm_order);
+	} else {
+		buttons.appendChild(sign_in);
+		buttons.appendChild(registration);
+		main.appendChild(buttons);
+	}
 
-	// 	input_login.className = "input_login";
-	// 	input_password.className = "input_password";
-
-	// 	sign_in.textContent = "Sign In";
-	// 	sign_in.className = "sign_in";
-
-	// 	label_login.appendChild(input_login);
-	// 	label_password.appendChild(input_password);
-
-	// 	main.appendChild(h1);
-	// 	main.appendChild(label_login);
-	// 	main.appendChild(label_password);
-	// 	main.appendChild(sign_in);
-	// });
-
-	// registration.addEventListener("click", () => {
-	// 	main.classList.remove("cart");
-	// 	main.classList.add("register");
-
-	// 	main.innerHTML = "";
-
-	// 	// main.appendChild
-	// });
-
-	updateCart();
+	updateCart(); // render products in cart
 });
 
-getFavorites(); //initial
+document.addEventListener("click", (e: Event) => {
+	const target = e.target as HTMLElement;
+
+	if (target.classList.contains("sign_in")) {
+		main.classList.remove(...mainClasses);
+		main.classList.add("login");
+
+		cart_button.style.borderBottom = "";
+		cart_button.classList.remove("disable_cursor");
+
+		main.innerHTML = `
+			<h1>Sign In</h1>
+			<label class="label_login">
+				Login
+				<input class="input_login" type="text" placeholder="Enter login">
+				<i class="fa-solid fa-circle-exclamation error_icon"></i>
+			</label>
+			<p class="login_error"></p>
+			<label class="label_password">
+				Password
+				<input class="input_password" type="password" placeholder="Enter password">
+				<i class="fa-solid fa-circle-exclamation error_icon"></i>
+			</label>
+			<p class="password_error"></p>
+			<p class="auth_error"></p>
+			<div class="login_button disabled" style="cursor: not-allowed;">Sign In</div>
+		`;
+
+		// DOM elements
+		const input_login = main.querySelector(".input_login") as HTMLInputElement;
+		const input_password = main.querySelector(
+			".input_password"
+		) as HTMLInputElement;
+		const login_error = main.querySelector(".login_error") as HTMLElement;
+		const password_error = main.querySelector(".password_error") as HTMLElement;
+		const auth_error = main.querySelector(".auth_error") as HTMLElement;
+		const login_icon = main.querySelector(
+			".label_login .error_icon"
+		) as HTMLElement;
+		const password_icon = main.querySelector(
+			".label_password .error_icon"
+		) as HTMLElement;
+		const sign_in = main.querySelector(".login_button") as HTMLElement;
+
+		let isLoginValid = false;
+		let isPasswordValid = false;
+
+		const validateLogin = (value: string): boolean => {
+			const startsWithLetter = /^[a-zA-Z]/.test(value);
+			const onlyLetters = /^[a-zA-Z]+$/.test(value);
+			return value.length >= 3 && startsWithLetter && onlyLetters;
+		};
+
+		const validatePassword = (value: string): boolean => {
+			const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(value);
+			return value.length >= 6 && hasSpecialChar;
+		};
+
+		const updateButtonState = (): void => {
+			sign_in.classList.toggle("disabled", !(isLoginValid && isPasswordValid));
+			sign_in.style.cursor =
+				isLoginValid && isPasswordValid ? "pointer" : "not-allowed";
+		};
+
+		const setInputError = (
+			input: HTMLInputElement,
+			error: HTMLElement,
+			icon: HTMLElement,
+			message: string
+		): void => {
+			input.style.border = "1px solid red";
+			icon.style.display = "inline-block";
+			error.textContent = message;
+			// input.setAttribute("aria-invalid", "true");
+			// input.setAttribute("aria-describedby", error.className);
+			// icon.setAttribute("aria-hidden", "true"); // Icon is decorative
+		};
+
+		const clearInputError = (
+			input: HTMLInputElement,
+			error: HTMLElement,
+			icon: HTMLElement
+		): void => {
+			input.style.border = "";
+			icon.style.display = "none";
+			error.textContent = "";
+		};
+
+		input_login.addEventListener("blur", () => {
+			const value = input_login.value.trim();
+			if (!value) {
+				setInputError(
+					input_login,
+					login_error,
+					login_icon,
+					"Login is required"
+				);
+				isLoginValid = false;
+			} else if (!validateLogin(value)) {
+				setInputError(
+					input_login,
+					login_error,
+					login_icon,
+					"Login must be 3+ characters, start with a letter, and contain only English letters"
+				);
+				isLoginValid = false;
+			} else {
+				clearInputError(input_login, login_error, login_icon);
+				isLoginValid = true;
+			}
+			updateButtonState();
+		});
+
+		input_login.addEventListener("focus", () => {
+			clearInputError(input_login, login_error, login_icon);
+			auth_error.textContent = "";
+		});
+
+		input_password.addEventListener("blur", () => {
+			const value = input_password.value.trim();
+			if (!value) {
+				setInputError(
+					input_password,
+					password_error,
+					password_icon,
+					"Password is required"
+				);
+				isPasswordValid = false;
+			} else if (!validatePassword(value)) {
+				setInputError(
+					input_password,
+					password_error,
+					password_icon,
+					"Password must be 6+ characters and include at least 1 special character"
+				);
+				isPasswordValid = false;
+			} else {
+				clearInputError(input_password, password_error, password_icon);
+				isPasswordValid = true;
+			}
+			updateButtonState();
+		});
+
+		input_password.addEventListener("focus", () => {
+			clearInputError(input_password, password_error, password_icon);
+			auth_error.textContent = "";
+		});
+
+		// Initialize button state
+		sign_in.classList.add("disabled");
+		sign_in.style.cursor = "not-allowed";
+
+		// Sign In button click handler
+		sign_in.addEventListener("click", async () => {
+			if (!isLoginValid || !isPasswordValid) return;
+
+			auth_error.textContent = "";
+			// sign_in.classList.add("loading");
+			sign_in.textContent = "Signing In...";
+
+			try {
+				const response = await fetch(
+					"https://6kt29kkeub.execute-api.eu-central-1.amazonaws.com/auth/login",
+					{
+						method: "POST",
+						headers: { "Content-Type": "application/json" },
+						body: JSON.stringify({
+							login: input_login.value.trim(),
+							password: input_password.value.trim(),
+						}),
+					}
+				);
+
+				if (!response.ok) {
+					const errorData = await response.json();
+					throw new Error(errorData.message || "Authentication failed");
+				}
+
+				// On success, redirect to Menu page
+				//localStorage.setItem();
+				localStorage.setItem("auth", "signed-in");
+				menu_link.click();
+			} catch (error) {
+				auth_error.textContent = "Incorrect login or password";
+				auth_error.style.color = "red";
+			} finally {
+				// sign_in.classList.remove("loading");
+				sign_in.textContent = "Sign In";
+			}
+		});
+	} else if (target.classList.contains("registration")) {
+		// City and Street Data
+		type City = "New York" | "Los Angeles" | "Chicago";
+		const cities: City[] = ["New York", "Los Angeles", "Chicago"];
+		const streets: Record<City, string[]> = {
+			"New York": [
+				"Broadway",
+				"Fifth Avenue",
+				"Wall Street",
+				"Park Avenue",
+				"Madison Avenue",
+				"Times Square",
+				"Lexington Avenue",
+				"Seventh Avenue",
+				"Columbus Avenue",
+				"Amsterdam Avenue",
+			],
+			"Los Angeles": [
+				"Hollywood Boulevard",
+				"Sunset Boulevard",
+				"Wilshire Boulevard",
+				"Rodeo Drive",
+				"Melrose Avenue",
+				"Venice Boulevard",
+				"Santa Monica Boulevard",
+				"Beverly Drive",
+				"La Brea Avenue",
+				"Vine Street",
+			],
+			Chicago: [
+				"Michigan Avenue",
+				"State Street",
+				"Wabash Avenue",
+				"Lake Shore Drive",
+				"Clark Street",
+				"Dearborn Street",
+				"LaSalle Street",
+				"Randolph Street",
+				"Washington Street",
+				"Madison Street",
+			],
+		};
+
+		main.classList.remove(...mainClasses);
+		main.classList.add("register");
+		cart_button.style.borderBottom = "";
+		cart_button.classList.remove("disable_cursor");
+		main.innerHTML = `
+	<h1>Registration</h1>
+	<label class="label_login">
+		Login
+		<input class="input_login" type="text" placeholder="Enter login">
+		<i class="fa-solid fa-circle-exclamation error_icon"></i>
+		<p class="login_error"></p>
+	</label>
+	<label class="label_password">
+		Password
+		<input class="input_password" type="password" placeholder="Enter password">
+		<i class="fa-solid fa-circle-exclamation error_icon"></i>
+		<p class="password_error"></p>
+	</label>
+	<label class="label_confirm_password">
+		Confirm Password
+		<input class="input_confirm_password" type="password" placeholder="Confirm password">
+		<i class="fa-solid fa-circle-exclamation error_icon"></i>
+		<p class="confirm_password_error"></p>
+	</label>
+	<label class="label_city">
+		City
+		<select class="input_city">
+			<option value="" disabled selected>Select a city</option>
+			${cities.map((city) => `<option value="${city}">${city}</option>`).join("")}
+		</select>
+		<i class="fa-solid fa-circle-exclamation error_icon"></i>
+		<p class="city_error"></p>
+	</label>
+	<label class="label_street">
+		Street
+		<select class="input_street">
+			<option value="" disabled selected>Select a street</option>
+		</select>
+		<i class="fa-solid fa-circle-exclamation error_icon"></i>
+		<p class="street_error"></p>
+	</label>
+	<label class="label_house_number">
+		House Number
+		<input class="input_house_number" type="text" placeholder="Enter house number" inputmode="numeric">
+		<i class="fa-solid fa-circle-exclamation error_icon"></i>
+		<p class="house_number_error"></p>
+	</label>
+	<div class="pay_by">
+		<p>Pay by</p>
+		<div class="payment_options">
+			<label class="radio-option">
+				<input type="radio" name="payment" value="cash" checked>
+				Cash
+			</label>
+			<label class="radio-option">
+				<input type="radio" name="payment" value="card">
+				Card
+			</label>
+		</div>
+	</div>
+	<p class="register_error"></p>
+	<div class="registration_button disabled" style="cursor: not-allowed;">Register</div>
+`;
+
+		// DOM elements
+		const input_login = main.querySelector(".input_login") as HTMLInputElement;
+		const input_password = main.querySelector(
+			".input_password"
+		) as HTMLInputElement;
+		const input_confirm_password = main.querySelector(
+			".input_confirm_password"
+		) as HTMLInputElement;
+		const select_city = main.querySelector(".input_city") as HTMLSelectElement;
+		const select_street = main.querySelector(
+			".input_street"
+		) as HTMLSelectElement;
+		const input_house_number = main.querySelector(
+			".input_house_number"
+		) as HTMLInputElement;
+		const input_cash = main.querySelector(
+			'input[name="payment"][value="cash"]'
+		) as HTMLInputElement;
+		const input_card = main.querySelector(
+			'input[name="payment"][value="card"]'
+		) as HTMLInputElement;
+		const login_error = main.querySelector(".login_error") as HTMLElement;
+		const password_error = main.querySelector(".password_error") as HTMLElement;
+		const confirm_password_error = main.querySelector(
+			".confirm_password_error"
+		) as HTMLElement;
+		const city_error = main.querySelector(".city_error") as HTMLElement;
+		const street_error = main.querySelector(".street_error") as HTMLElement;
+		const house_number_error = main.querySelector(
+			".house_number_error"
+		) as HTMLElement;
+		const register_error = main.querySelector(".register_error") as HTMLElement;
+		const register = main.querySelector(".registration_button") as HTMLElement;
+		const login_icon = main.querySelector(
+			".label_login .error_icon"
+		) as HTMLElement;
+		const password_icon = main.querySelector(
+			".label_password .error_icon"
+		) as HTMLElement;
+		const confirm_password_icon = main.querySelector(
+			".label_confirm_password .error_icon"
+		) as HTMLElement;
+		const city_icon = main.querySelector(
+			".label_city .error_icon"
+		) as HTMLElement;
+		const street_icon = main.querySelector(
+			".label_street .error_icon"
+		) as HTMLElement;
+		const house_number_icon = main.querySelector(
+			".label_house_number .error_icon"
+		) as HTMLElement;
+
+		// Validation state
+		let isLoginValid = false;
+		let isPasswordValid = false;
+		let isConfirmPasswordValid = false;
+		let isCityValid = false;
+		let isStreetValid = false;
+		let isHouseNumberValid = false;
+
+		// Validation Functions
+		const validateLogin = (value: string): boolean => {
+			const startsWithLetter = /^[a-zA-Z]/.test(value);
+			const onlyLetters = /^[a-zA-Z]+$/.test(value);
+			return value.length >= 3 && startsWithLetter && onlyLetters;
+		};
+
+		const validatePassword = (value: string): boolean => {
+			const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(value);
+			return value.length >= 6 && hasSpecialChar;
+		};
+
+		const validateConfirmPassword = (
+			password: string,
+			confirm: string
+		): boolean => {
+			return password === confirm && validatePassword(confirm);
+		};
+
+		const validateCity = (value: string): boolean => {
+			return cities.includes(value as City);
+		};
+
+		const validateStreet = (value: string, city: string): boolean => {
+			return city in streets ? streets[city as City].includes(value) : false;
+		};
+
+		const validateHouseNumber = (value: string): boolean => {
+			const trimmedValue = value.trim();
+			if (!trimmedValue) return false;
+			if (!/^\d+$/.test(trimmedValue)) return false; // Must be digits only
+			const num = parseInt(trimmedValue, 10);
+			return !isNaN(num) && num > 1;
+		};
+
+		// Update Button State
+		const updateButtonState = (): void => {
+			const isValid =
+				isLoginValid &&
+				isPasswordValid &&
+				isConfirmPasswordValid &&
+				isCityValid &&
+				isStreetValid &&
+				isHouseNumberValid;
+			register.classList.toggle("disabled", !isValid);
+			register.style.cursor = isValid ? "pointer" : "not-allowed";
+		};
+
+		// Handle Input Styling and Error Messages
+		const setInputError = (
+			input: HTMLInputElement | HTMLSelectElement,
+			error: HTMLElement,
+			icon: HTMLElement,
+			message: string
+		): void => {
+			input.style.border = "1px solid red";
+			icon.style.display = "inline-block";
+			error.textContent = message;
+			input.setAttribute("aria-invalid", "true");
+			input.setAttribute("aria-describedby", error.className);
+			icon.setAttribute("aria-hidden", "true");
+		};
+
+		const clearInputError = (
+			input: HTMLInputElement | HTMLSelectElement,
+			error: HTMLElement,
+			icon: HTMLElement
+		): void => {
+			input.style.border = "";
+			icon.style.display = "none";
+			error.textContent = "";
+			input.removeAttribute("aria-invalid");
+			input.removeAttribute("aria-describedby");
+		};
+
+		// Input Event Listeners
+		input_login.addEventListener("blur", () => {
+			const value = input_login.value.trim();
+			if (!value) {
+				setInputError(
+					input_login,
+					login_error,
+					login_icon,
+					"Login is required"
+				);
+				isLoginValid = false;
+			} else if (!validateLogin(value)) {
+				setInputError(
+					input_login,
+					login_error,
+					login_icon,
+					"Login must be 3+ characters, start with a letter, and contain only English letters"
+				);
+				isLoginValid = false;
+			} else {
+				clearInputError(input_login, login_error, login_icon);
+				isLoginValid = true;
+			}
+			updateButtonState();
+		});
+
+		input_login.addEventListener("focus", () => {
+			clearInputError(input_login, login_error, login_icon);
+			register_error.textContent = "";
+		});
+
+		input_password.addEventListener("blur", () => {
+			const value = input_password.value.trim();
+			if (!value) {
+				setInputError(
+					input_password,
+					password_error,
+					password_icon,
+					"Password is required"
+				);
+				isPasswordValid = false;
+			} else if (!validatePassword(value)) {
+				setInputError(
+					input_password,
+					password_error,
+					password_icon,
+					"Password must be 6+ characters and include at least 1 special character"
+				);
+				isPasswordValid = false;
+			} else {
+				clearInputError(input_password, password_error, password_icon);
+				isPasswordValid = true;
+			}
+			// Re-validate confirm password if it exists
+			if (input_confirm_password.value) {
+				input_confirm_password.dispatchEvent(new Event("blur"));
+			}
+			updateButtonState();
+		});
+
+		input_password.addEventListener("focus", () => {
+			clearInputError(input_password, password_error, password_icon);
+			register_error.textContent = "";
+		});
+
+		input_confirm_password.addEventListener("blur", () => {
+			const value = input_confirm_password.value.trim();
+			const password = input_password.value.trim();
+			if (!value) {
+				setInputError(
+					input_confirm_password,
+					confirm_password_error,
+					confirm_password_icon,
+					"Confirm Password is required"
+				);
+				isConfirmPasswordValid = false;
+			} else if (!validateConfirmPassword(password, value)) {
+				setInputError(
+					input_confirm_password,
+					confirm_password_error,
+					confirm_password_icon,
+					"Passwords must match and meet requirements"
+				);
+				isConfirmPasswordValid = false;
+			} else {
+				clearInputError(
+					input_confirm_password,
+					confirm_password_error,
+					confirm_password_icon
+				);
+				isConfirmPasswordValid = true;
+			}
+			updateButtonState();
+		});
+
+		input_confirm_password.addEventListener("focus", () => {
+			clearInputError(
+				input_confirm_password,
+				confirm_password_error,
+				confirm_password_icon
+			);
+			register_error.textContent = "";
+		});
+
+		const validateCityOnInteraction = () => {
+			const value = select_city.value;
+			if (!validateCity(value)) {
+				setInputError(select_city, city_error, city_icon, "City is required");
+				isCityValid = false;
+			} else {
+				clearInputError(select_city, city_error, city_icon);
+				isCityValid = true;
+			}
+			updateButtonState();
+		};
+
+		select_city.addEventListener("change", () => {
+			validateCityOnInteraction();
+			select_street.innerHTML = `
+		<option value="" disabled selected>Select a street</option>
+		${
+			select_city.value in streets
+				? streets[select_city.value as City]
+						.map((street) => `<option value="${street}">${street}</option>`)
+						.join("")
+				: ""
+		}
+	`;
+			isStreetValid = false;
+			select_street.dispatchEvent(new Event("change"));
+		});
+
+		select_city.addEventListener("blur", validateCityOnInteraction);
+
+		select_city.addEventListener("focus", () => {
+			clearInputError(select_city, city_error, city_icon);
+			register_error.textContent = "";
+		});
+
+		const validateStreetOnInteraction = () => {
+			const value = select_street.value;
+			const city = select_city.value;
+			if (!validateStreet(value, city)) {
+				setInputError(
+					select_street,
+					street_error,
+					street_icon,
+					"Street is required"
+				);
+				isStreetValid = false;
+			} else {
+				clearInputError(select_street, street_error, street_icon);
+				isStreetValid = true;
+			}
+			updateButtonState();
+		};
+
+		select_street.addEventListener("change", validateStreetOnInteraction);
+		select_street.addEventListener("blur", validateStreetOnInteraction);
+
+		select_street.addEventListener("focus", () => {
+			clearInputError(select_street, street_error, street_icon);
+			register_error.textContent = "";
+		});
+
+		input_house_number.addEventListener("blur", () => {
+			const value = input_house_number.value.trim();
+			if (!value) {
+				setInputError(
+					input_house_number,
+					house_number_error,
+					house_number_icon,
+					"House number is required"
+				);
+				isHouseNumberValid = false;
+			} else if (!validateHouseNumber(value)) {
+				setInputError(
+					input_house_number,
+					house_number_error,
+					house_number_icon,
+					"House number must be a whole number greater than 1"
+				);
+				isHouseNumberValid = false;
+			} else {
+				clearInputError(
+					input_house_number,
+					house_number_error,
+					house_number_icon
+				);
+				isHouseNumberValid = true;
+			}
+			updateButtonState();
+		});
+
+		input_house_number.addEventListener("focus", () => {
+			clearInputError(
+				input_house_number,
+				house_number_error,
+				house_number_icon
+			);
+			register_error.textContent = "";
+		});
+
+		// Register Button Click Handler
+		register.addEventListener("click", async () => {
+			if (
+				!isLoginValid ||
+				!isPasswordValid ||
+				!isConfirmPasswordValid ||
+				!isCityValid ||
+				!isStreetValid ||
+				!isHouseNumberValid
+			) {
+				return;
+			}
+
+			register_error.textContent = "";
+			register.classList.add("loading");
+			register.textContent = "Registering...";
+
+			try {
+				const paymentMethod = input_cash.checked ? "cash" : "card";
+				const houseNumberValue = parseInt(input_house_number.value.trim(), 10);
+				const response = await fetch(
+					"https://6kt29kkeub.execute-api.eu-central-1.amazonaws.com/auth/register",
+					{
+						method: "POST",
+						headers: { "Content-Type": "application/json" },
+						body: JSON.stringify({
+							login: input_login.value.trim(),
+							password: input_password.value.trim(),
+							confirmPassword: input_confirm_password.value.trim(),
+							city: select_city.value,
+							street: select_street.value,
+							houseNumber: houseNumberValue,
+							paymentMethod,
+						}),
+					}
+				);
+
+				if (!response.ok) {
+					const errorData = await response.json();
+					throw new Error(errorData.message || "Registration failed");
+				}
+
+				register_error.textContent = "Registration was succesful!";
+				register_error.style.color = "green";
+			} catch (error: unknown) {
+				let errorMessage = "Registration failed";
+				if (error instanceof Error) {
+					errorMessage = error.message;
+				} else if (
+					typeof error === "object" &&
+					error !== null &&
+					"message" in error
+				) {
+					errorMessage = (error as { message: string }).message;
+				}
+				register_error.textContent = errorMessage;
+				register_error.style.color = "red";
+			} finally {
+				register.classList.remove("loading");
+				register.textContent = "Register";
+			}
+		});
+	}
+});
+
+document.addEventListener("DOMContentLoaded", () => {
+	const cart = JSON.parse(localStorage.getItem("cart") ?? "[]");
+	const storedCurrentProducts = localStorage.getItem("current_products");
+	if (storedCurrentProducts) {
+		current_products.splice(
+			0,
+			current_products.length,
+			...JSON.parse(storedCurrentProducts)
+		);
+	}
+
+	if (cart.length > 0) {
+		cart_button.style.display = "inline";
+		const cart_number = document.querySelector(".cart_number") as HTMLElement;
+		cart_number.textContent = cart.length.toString();
+	}
+	getFavorites(); //initial
+});
