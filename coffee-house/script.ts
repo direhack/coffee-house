@@ -424,6 +424,10 @@ function resume(): void {
 	schedule(remaining || INTERVAL);
 }
 
+const isLoggedIn = (): boolean => {
+	return localStorage.getItem("jwt") !== null;
+};
+
 // Initial schedule on next animation frames
 requestAnimationFrame(() => requestAnimationFrame(() => schedule(INTERVAL)));
 
@@ -491,14 +495,9 @@ menu_link.addEventListener("click", async (e: Event) => {
 	// if (storedCurrentProducts?.length === 0) cart_button.style.display = "none";
 	cart_button.classList.remove("disable_cursor");
 	cart_button.style.borderBottom = "";
-
-	const cart = JSON.parse(localStorage.getItem("cart") ?? "[]");
-	if (cart.length === 0) {
-		cart_button.style.display = "none";
-	}
+	updateCartButtonVisibility();
 
 	cross.click();
-	//
 
 	if (data.length === 0) {
 		const success = await getProducts();
@@ -554,6 +553,8 @@ menu_link.addEventListener("click", async (e: Event) => {
 		current_product.type = category;
 		filteredData = fullData.filter((el) => el.category === category);
 
+		console.log(fullData);
+
 		const srcMap = {
 			coffee: productImages.coffee,
 			tea: productImages.tea,
@@ -569,14 +570,17 @@ menu_link.addEventListener("click", async (e: Event) => {
 			const block = document.createElement("div");
 			const info_block = document.createElement("div");
 			const price = document.createElement("p");
+			const discountPrice = document.createElement("p");
 
 			block.classList.add("block");
 			info_block.classList.add("info_block");
 			price.classList.add("price");
+			discountPrice.classList.add("discount_price");
 
 			name.textContent = item.name;
 			description.textContent = item.description;
 			price.textContent = `$${item.price}`;
+			discountPrice.textContent = `${item.discountPrice}`;
 			img.src = sources[i] as string;
 			img.alt = `${category}-${i}`;
 
@@ -584,6 +588,10 @@ menu_link.addEventListener("click", async (e: Event) => {
 			info_block.appendChild(name);
 			info_block.appendChild(description);
 			info_block.appendChild(price);
+			if (localStorage.getItem("jwt")) {
+				price.style.textDecoration = "line-through";
+				info_block.appendChild(discountPrice);
+			}
 			block.appendChild(info_block);
 
 			content.appendChild(block);
@@ -831,8 +839,11 @@ links.forEach((link, i) => {
 			if (i === 0) cross.click();
 			menu_link.style.borderBottom = "";
 			menu_link.classList.remove("disable_cursor");
-			const cart = JSON.parse(localStorage.getItem("cart") ?? "[]");
-			if (cart.length === 0) cart_button.style.display = "none";
+			// const cart = JSON.parse(localStorage.getItem("cart") ?? "[]");
+			// if (cart.length === 0) cart_button.style.display = "none";
+
+			updateCartButtonVisibility(); // ?
+
 			cart_button.style.borderBottom = "";
 			cart_button.classList.remove("disable_cursor");
 			main.classList.remove(...mainClasses);
@@ -854,6 +865,9 @@ burger_menu_links.forEach((link, i) => {
 		} else if (i !== 3) {
 			cross.click();
 			menu_link.classList.remove("disable_cursor");
+			cart_button.style.borderBottom = "";
+			cart_button.classList.remove("disable_cursor");
+			updateCartButtonVisibility();
 			main.classList.remove(...mainClasses);
 			main.classList.add("home");
 			main.replaceChildren(...backup);
@@ -1075,12 +1089,18 @@ const addToCart = (): void => {
 	count++;
 	localStorage.setItem("cartCount", count.toString());
 
-	// console.log(current_product.totalPrice);
-
-	updateCartNumber();
-
+	updateCartButtonVisibility();
 	close.click();
-	cart_button.style.display = "inline";
+};
+
+const updateCartButtonVisibility = (): void => {
+	const cart = JSON.parse(localStorage.getItem("cart") ?? "[]");
+	if (isLoggedIn() || cart.length > 0) {
+		cart_button.style.display = "inline";
+	} else {
+		cart_button.style.display = "none";
+	}
+	updateCartNumber();
 };
 
 const updateCartNumber = (): void => {
@@ -1164,7 +1184,7 @@ const updateCart = (): void => {
 				// 	count = Math.max(0, count - 1);
 				// 	localStorage.setItem("cartCount", count.toString());
 
-				updateCartNumber();
+				updateCartButtonVisibility();
 				updateCart();
 				// }
 
@@ -1213,9 +1233,10 @@ const updateCart = (): void => {
 
 		cart_total_price.textContent = `$${totalCartPrice.toFixed(2)}`;
 	}
+	updateCartButtonVisibility();
 };
 
-cart_button.addEventListener("click", () => {
+cart_button.addEventListener("click", async () => {
 	main.classList.remove(...mainClasses);
 	main.classList.add("cart");
 	cart_button.classList.add("disable_cursor");
@@ -1223,6 +1244,7 @@ cart_button.addEventListener("click", () => {
 
 	cart_button.style.borderBottom = "2px solid #403f3d";
 	menu_link.style.borderBottom = "";
+	updateCartButtonVisibility();
 
 	main.innerHTML = "";
 
@@ -1260,9 +1282,39 @@ cart_button.addEventListener("click", () => {
 	main.appendChild(div2);
 	main.appendChild(div);
 
-	if (localStorage.auth === "signed-in") {
-		// payment option
-		// address
+	if (isLoggedIn()) {
+		const jwtToken = localStorage.getItem("jwt");
+
+		try {
+			const response = await fetch(
+				"https://6kt29kkeub.execute-api.eu-central-1.amazonaws.com/auth/profile",
+				{
+					method: "GET",
+					headers: {
+						Authorization: `Bearer ${jwtToken}`,
+						"Content-Type": "application/json",
+					},
+				}
+			);
+
+			if (!response.ok) {
+				const errorData = await response.json();
+				console.error(
+					"Profile fetch failed:",
+					errorData.message || response.statusText
+				);
+				if (response.status === 401) {
+					localStorage.removeItem("jwt");
+					updateCartButtonVisibility();
+				}
+				return;
+			}
+			const profileData = await response.json();
+			localStorage.setItem("userData", JSON.stringify(profileData.data));
+			console.log("Profile loaded:", profileData.data);
+		} catch (error) {
+			console.log("Network error", error);
+		}
 
 		const div3 = document.createElement("div");
 		const div4 = document.createElement("div");
@@ -1272,9 +1324,17 @@ cart_button.addEventListener("click", () => {
 		const p6 = document.createElement("p");
 
 		p3.textContent = "Address:";
-		p4.textContent = "localstorage";
 		p5.textContent = "Pay by:";
-		p6.textContent = "localstorage";
+
+		const userData = localStorage.getItem("userData");
+
+		if (userData) {
+			const parsedData = JSON.parse(userData);
+
+			p4.textContent = `${parsedData.city}, ${parsedData.street}, ${parsedData.houseNumber}`;
+
+			p6.textContent = parsedData.paymentMethod;
+		}
 
 		div3.className = "address";
 		div4.className = "pay_by";
@@ -1310,6 +1370,7 @@ document.addEventListener("click", (e: Event) => {
 
 		cart_button.style.borderBottom = "";
 		cart_button.classList.remove("disable_cursor");
+		updateCartButtonVisibility();
 
 		main.innerHTML = `
 			<h1>Sign In</h1>
@@ -1479,9 +1540,10 @@ document.addEventListener("click", (e: Event) => {
 					throw new Error(errorData.message || "Authentication failed");
 				}
 
-				// On success, redirect to Menu page
-				//localStorage.setItem();
-				localStorage.setItem("auth", "signed-in");
+				const data = await response.json();
+				const access_token = data.data.access_token;
+				localStorage.setItem("jwt", access_token);
+				updateCartButtonVisibility();
 				menu_link.click();
 			} catch (error) {
 				auth_error.textContent = "Incorrect login or password";
@@ -1538,6 +1600,7 @@ document.addEventListener("click", (e: Event) => {
 		main.classList.add("register");
 		cart_button.style.borderBottom = "";
 		cart_button.classList.remove("disable_cursor");
+		updateCartButtonVisibility();
 		main.innerHTML = `
 	<h1>Registration</h1>
 	<label class="label_login">
@@ -1980,6 +2043,15 @@ document.addEventListener("click", (e: Event) => {
 
 				register_error.textContent = "Registration was succesful!";
 				register_error.style.color = "green";
+
+				// const userAddress = {
+				// 	city: select_city.value,
+				// 	street: select_street.value,
+				// 	houseNumber: houseNumberValue,
+				// };
+
+				// localStorage.setItem("paymentMethod", paymentMethod);
+				// localStorage.setItem("address", JSON.stringify(userAddress));
 			} catch (error: unknown) {
 				let errorMessage = "Registration failed";
 				if (error instanceof Error) {
@@ -2002,7 +2074,7 @@ document.addEventListener("click", (e: Event) => {
 });
 
 document.addEventListener("DOMContentLoaded", () => {
-	const cart = JSON.parse(localStorage.getItem("cart") ?? "[]");
+	// const cart = JSON.parse(localStorage.getItem("cart") ?? "[]");
 	const storedCurrentProducts = localStorage.getItem("current_products");
 	if (storedCurrentProducts) {
 		current_products.splice(
@@ -2012,10 +2084,11 @@ document.addEventListener("DOMContentLoaded", () => {
 		);
 	}
 
-	if (cart.length > 0) {
-		cart_button.style.display = "inline";
-		const cart_number = document.querySelector(".cart_number") as HTMLElement;
-		cart_number.textContent = cart.length.toString();
-	}
+	updateCartButtonVisibility();
+	// if (cart.length > 0) {
+	// 	cart_button.style.display = "inline";
+	// 	const cart_number = document.querySelector(".cart_number") as HTMLElement;
+	// 	cart_number.textContent = cart.length.toString();
+	// }
 	getFavorites(); //initial
 });
