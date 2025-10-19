@@ -37,6 +37,9 @@ header .menu_cart .cart_button {
   display: none;
   margin-right: 10px;
 }
+header .menu_cart .cart_button:hover {
+  cursor: pointer;
+}
 header .burger {
   position: relative;
   width: 28px;
@@ -942,11 +945,72 @@ a {
     line-height: 115%;
   }
 }
+.cart .cart_products {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+.cart .cart_products .product_row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.cart .cart_products .product_row .product_info {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+.cart .cart_products .product_row .product_info .fa-trash:hover {
+  cursor: pointer;
+  color: #665f55;
+}
+.cart .cart_products .product_row .product_info img {
+  width: 100px;
+  height: 100px;
+  border-radius: 15%;
+}
+.cart .cart_products .product_row .product_info .product_info_div {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+.cart .cart_products .product_row .product_info .product_info_div .product_name {
+  font-weight: bold;
+  color: #403f3d;
+}
+.cart .cart_products .product_row .product_info .product_info_div .product_type {
+  display: flex;
+  gap: 5px;
+}
+.cart .cart_products .product_row .product_info .product_info_div .product_type .product_size {
+  color: #403f3d;
+}
+.cart .cart_products .product_row .product_info .product_info_div .product_type .comma {
+  color: #403f3d;
+  margin: 0 2px;
+}
+.cart .cart_products .product_row .product_info .product_info_div .product_type .product_additive {
+  color: #403f3d;
+}
+.cart .cart_products .product_row .product_price {
+  color: #403f3d;
+  font-weight: bold;
+}
 .cart .cart_total_price {
+  margin-top: 50px;
   display: flex;
   justify-content: space-between;
 }
+.cart .cart_total_price .cart_total {
+  font-weight: bold;
+  color: #403f3d;
+}
+.cart .cart_total_price .cart_price {
+  font-weight: bold;
+  color: #403f3d;
+}
 .cart .cart_buttons {
+  margin-top: 50px;
   display: flex;
   justify-content: center;
   gap: 50px;
@@ -970,6 +1034,41 @@ a {
   color: #e1d4c9;
   background-color: #665f55;
 }
+.cart .address {
+  display: flex;
+  justify-content: space-between;
+}
+.cart .address p {
+  font-weight: bold;
+  color: #403f3d;
+}
+.cart .pay_by {
+  display: flex;
+  justify-content: space-between;
+}
+.cart .pay_by p {
+  font-weight: bold;
+  color: #403f3d;
+}
+.cart .confirm_order {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  justify-self: center;
+  border: 1px solid #665f55;
+  color: #403f3d;
+  border-radius: 53.5px;
+  font-weight: bold;
+  width: 200px;
+  height: 44px;
+  margin-top: 50px;
+  margin-bottom: 100px;
+}
+.cart .confirm_order:hover {
+  color: #e1d4c9;
+  background-color: #665f55;
+  cursor: pointer;
+}
 
 .login {
   display: flex;
@@ -988,7 +1087,7 @@ a {
     line-height: 115%;
   }
 }
-.login .sign_in {
+.login .login_button {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1003,17 +1102,19 @@ a {
   margin-bottom: 100px;
   cursor: pointer;
 }
-.login .sign_in:hover {
+.login .login_button:hover {
   color: #e1d4c9;
   background-color: #665f55;
 }
 .login .label_login,
 .login .label_password {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
   color: #403f3d;
   font-size: 25px;
+  gap: 10px;
 }
 .login .label_login .input_login,
 .login .label_login .input_password,
@@ -1021,9 +1122,9 @@ a {
 .login .label_password .input_password {
   border-radius: 12px;
   border: 1px solid #c1b6ad;
-  width: 400px;
-  height: 56px;
-  font-size: 25px;
+  width: 330px;
+  height: 40px;
+  font-size: 20px;
 }
 .login .label_login .input_login:focus,
 .login .label_login .input_password:focus,
@@ -1031,8 +1132,29 @@ a {
 .login .label_password .input_password:focus {
   outline: none;
 }
-
+.login .error_icon {
+  display: none;
+  position: absolute;
+  right: 35%;
+  top: 60%;
+  font-size: 25px;
+}
+.login .login_error,
+.login .password_error,
+.login .auth_error {
+  color: red;
+  font-size: 12px;
+  min-height: 15px;
+  font-weight: bold;
+}
+.register {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 25px;
+}
 .register h1 {
+  width: 100%;
+  text-align: center;
   color: #403f3d;
   font-size: 72px;
   font-weight: 600;
@@ -1044,6 +1166,99 @@ a {
     font-weight: 600;
     line-height: 115%;
   }
+}
+.register label {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  color: #403f3d;
+  gap: 5px;
+  position: relative;
+}
+.register label .error_icon {
+  display: none;
+  position: absolute;
+  right: 0;
+  top: 0;
+  font-size: 16px;
+}
+.register .login_error,
+.register .password_error,
+.register .confirm_password_error,
+.register .city_error,
+.register .street_error,
+.register .house_number_error {
+  min-height: 20px;
+  color: red;
+}
+.register .register_error {
+  width: 100%;
+  min-height: 20px;
+}
+.register input {
+  border-radius: 12px;
+  border: 1px solid #c1b6ad;
+  width: 390px;
+  height: 40px;
+  font-size: 20px;
+}
+.register input:focus {
+  outline: none;
+}
+.register select {
+  border-radius: 12px;
+  width: 200px;
+  height: 40px;
+}
+.register .pay_by {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  width: 20%;
+}
+.register .pay_by p {
+  color: #403f3d;
+}
+.register .pay_by .payment_options {
+  display: flex;
+  flex-direction: row;
+  gap: 50px;
+}
+.register .pay_by .payment_options .radio-option {
+  display: flex;
+  flex-direction: row;
+  gap: 10px;
+  color: #403f3d;
+  font-weight: normal;
+}
+.register .pay_by .payment_options .radio-option input {
+  height: 16px;
+  width: 16px;
+}
+.register .pay_by .payment_options .radio-option:hover {
+  cursor: pointer;
+}
+.register .registration_button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  justify-self: center;
+  margin: 0 auto;
+  padding: 0 30px;
+  border: 1px solid #665f55;
+  color: #403f3d;
+  border-radius: 53.5px;
+  font-weight: bold;
+  width: 200px;
+  height: 44px;
+  margin-top: 50px;
+  margin-bottom: 100px;
+}
+.register .registration_button:hover {
+  cursor: pointer;
+  color: #e1d4c9;
+  background-color: #665f55;
 }
 
 .active {
@@ -1523,6 +1738,14 @@ a {
 }
 .disable_cursor {
   pointer-events: none;
+}
+
+.disabled {
+  cursor: not-allowed;
+}
+.disabled:hover {
+  background-color: #e1d4c9 !important;
+  color: #403f3d !important;
 }
 
 .fa-rotate-right {
