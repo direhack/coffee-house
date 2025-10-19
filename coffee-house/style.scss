@@ -38,6 +38,9 @@ header {
 		.cart_button {
 			display: none;
 			margin-right: 10px;
+			&:hover {
+				cursor: pointer;
+			}
 		}
 	}
 	.burger {
@@ -857,15 +860,75 @@ a {
 			@include heading-1-mobile;
 		}
 	}
+	.cart_products {
+		display: flex;
+		flex-direction: column;
+		gap: 30px;
+		.product_row {
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			.product_info {
+				display: flex;
+				align-items: center;
+				gap: 15px;
+				.fa-trash {
+					&:hover {
+						cursor: pointer;
+						color: #665f55;
+					}
+				}
+				img {
+					width: 100px;
+					height: 100px;
+					border-radius: 15%;
+				}
+				.product_info_div {
+					display: flex;
+					flex-direction: column;
+					align-items: flex-start;
+					.product_name {
+						font-weight: bold;
+						color: $dark_text;
+					}
+					.product_type {
+						display: flex;
+						gap: 5px;
+						.product_size {
+							color: $dark_text;
+						}
+						.comma {
+							color: $dark_text;
+							margin: 0 2px;
+						}
+						.product_additive {
+							color: $dark_text;
+						}
+					}
+				}
+			}
+			.product_price {
+				color: $dark_text;
+				font-weight: bold;
+			}
+		}
+	}
+
 	.cart_total_price {
+		margin-top: 50px;
 		display: flex;
 		justify-content: space-between;
 		.cart_total {
+			font-weight: bold;
+			color: $dark_text;
 		}
 		.cart_price {
+			font-weight: bold;
+			color: $dark_text;
 		}
 	}
 	.cart_buttons {
+		margin-top: 50px;
 		display: flex;
 		justify-content: center;
 		gap: 50px;
@@ -888,6 +951,43 @@ a {
 			}
 		}
 	}
+	.address {
+		display: flex;
+		justify-content: space-between;
+		p {
+			font-weight: bold;
+			color: $dark_text;
+		}
+	}
+
+	.pay_by {
+		display: flex;
+		justify-content: space-between;
+		p {
+			font-weight: bold;
+			color: $dark_text;
+		}
+	}
+
+	.confirm_order {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		justify-self: center;
+		border: 1px solid #665f55;
+		color: #403f3d;
+		border-radius: 53.5px;
+		font-weight: bold;
+		width: 200px;
+		height: 44px;
+		margin-top: 50px;
+		margin-bottom: 100px;
+		&:hover {
+			color: #e1d4c9;
+			background-color: #665f55;
+			cursor: pointer;
+		}
+	}
 }
 
 .login {
@@ -900,7 +1000,7 @@ a {
 			@include heading-1-mobile;
 		}
 	}
-	.sign_in {
+	.login_button {
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -921,30 +1021,173 @@ a {
 	}
 	.label_login,
 	.label_password {
+		position: relative;
 		display: flex;
 		flex-direction: column;
 		align-items: center;
 		color: $dark_text;
 		font-size: 25px;
+		gap: 10px;
 		.input_login,
 		.input_password {
 			border-radius: 12px;
 			border: 1px solid $light_border;
-			width: 400px;
-			height: 56px;
-			font-size: 25px;
+			width: 330px;
+			height: 40px;
+			font-size: 20px;
 			&:focus {
 				outline: none;
 			}
 		}
 	}
+	.error_icon {
+		display: none;
+		position: absolute;
+		right: 35%;
+		top: 60%;
+		font-size: 25px;
+	}
+	.login_error,
+	.password_error,
+	.auth_error {
+		color: red;
+		font-size: 12px;
+		min-height: 15px;
+		font-weight: bold;
+	}
+	.auth_error {
+	}
 }
 .register {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 25px;
 	h1 {
+		width: 100%;
+		text-align: center;
 		color: $dark_text;
 		@include heading-1;
 		@include mobile {
 			@include heading-1-mobile;
+		}
+	}
+	label {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-start;
+		color: $dark_text;
+		gap: 5px;
+		position: relative;
+		.error_icon {
+			display: none;
+			position: absolute;
+			right: 0;
+			top: 0;
+			// transform: translateY(-50%);
+			font-size: 16px;
+		}
+	}
+	.login_error,
+	.password_error,
+	.confirm_password_error,
+	.city_error,
+	.street_error,
+	.house_number_error {
+		min-height: 20px;
+		color: red;
+	}
+	.register_error {
+		width: 100%;
+		min-height: 20px;
+	}
+	input {
+		border-radius: 12px;
+		border: 1px solid $light_border;
+		// padding: 8px 40px 8px 8px;
+		width: 390px;
+		height: 40px;
+		font-size: 20px;
+		&:focus {
+			outline: none;
+		}
+	}
+	select {
+		border-radius: 12px;
+		width: 200px;
+		height: 40px;
+	}
+	.label_login {
+		.input_login {
+		}
+	}
+	.label_password {
+		.input_password {
+		}
+	}
+	.label_confirm_password {
+		.input_confirm_password {
+		}
+	}
+	.label_city {
+		.input_city {
+		}
+	}
+	.label_street {
+		.input_street {
+		}
+	}
+	.label_house_number {
+		.input_house_number {
+		}
+	}
+	.pay_by {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 10px;
+		width: 20%;
+		p {
+			color: $dark_text;
+		}
+		.payment_options {
+			display: flex;
+			flex-direction: row;
+			gap: 50px;
+			.radio-option {
+				display: flex;
+				flex-direction: row;
+				gap: 10px;
+				color: $dark_text;
+				font-weight: normal;
+				input {
+					height: 16px;
+					width: 16px;
+				}
+				&:hover {
+					cursor: pointer;
+				}
+			}
+		}
+	}
+	.registration_button {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		justify-self: center;
+		margin: 0 auto;
+		padding: 0 30px;
+		border: 1px solid #665f55;
+		color: #403f3d;
+		border-radius: 53.5px;
+		font-weight: bold;
+		width: 200px;
+		height: 44px;
+		margin-top: 50px;
+		margin-bottom: 100px;
+		&:hover {
+			cursor: pointer;
+			color: #e1d4c9;
+			background-color: #665f55;
 		}
 	}
 }
@@ -1334,6 +1577,18 @@ a {
 
 .disable_cursor {
 	pointer-events: none;
+}
+
+.disabled {
+	cursor: not-allowed;
+	&:hover {
+		background-color: $body !important;
+		color: $dark_text !important;
+	}
+}
+.loading {
+	// cursor: wait !important;
+	// background-color: #666 !important;
 }
 
 .fa-rotate-right {
