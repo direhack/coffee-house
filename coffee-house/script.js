@@ -1,8 +1,11 @@
 // 🍹 DOM Elements
 const main = document.querySelector("main");
 const header = document.querySelector("header");
+const cart_button = document.querySelector(".cart_button");
 const drink = document.querySelector(".drink");
 const slider = document.querySelector(".slider");
+const three_lines = document.querySelector(".three-lines");
+const loader = document.querySelector(".loader");
 const left_button = document.querySelector(".arrow-left");
 const right_button = document.querySelector(".arrow-right");
 const menu_link = document.querySelector(".menu_link");
@@ -13,6 +16,7 @@ const burger_menu = document.querySelector(".burger-menu");
 const burger_menu_links = document.querySelectorAll(".burger_menu_link");
 // const content = document.querySelector(".content") as HTMLElement;
 const button = document.querySelector(".home button");
+const add_cart = document.querySelector(".add_cart");
 const close = document.querySelector(".close");
 const backdrop = document.querySelector(".backdrop");
 const modal = document.querySelector(".modal");
@@ -27,6 +31,7 @@ const L = document.querySelector(".modal .size_l");
 const button_S = document.querySelector(".modal .small");
 const button_M = document.querySelector(".modal .medium");
 const button_L = document.querySelector(".modal .large");
+const sizes_block = document.querySelector(".sizes_block");
 // Additives selectors
 const first_additive = document.querySelector(".modal .first_additive");
 const second_additive = document.querySelector(".modal .second_additive");
@@ -35,28 +40,49 @@ const third_additive = document.querySelector(".modal .third_additive");
 const button_first_additive = document.querySelector(".modal .first");
 const button_second_additive = document.querySelector(".modal .second");
 const button_third_additive = document.querySelector(".modal .third");
+const additives_block = document.querySelector(".additives_block");
 // Other modal elements
 const total_price = document.querySelector(".modal .total_price");
 // 🥤 Media Sources (arrays of image URLs)
-const coffee_src = [];
-const tea_src = [];
-const dessert_src = [];
+// const coffee_src: string[] = [];
+// const tea_src: string[] = [];
+// const dessert_src: string[] = [];
+const productImages = {
+    coffee: [],
+    tea: [],
+    dessert: [],
+};
 const drinks = [];
+const drinks_names = [];
+const drinks_info = [];
+const drink_prices = [];
+const mainClasses = ["home", "menu", "cart", "login", "register"];
 // ⚙️ State and Data Variables
 let current = 0; // current index for slideshow
 let startX = 0; // touch start X coordinate
 let endX = 0; // touch end X coordinate
+let count = 0;
 let data = []; // fetched product data (type `any` for now)
+let fullData = [];
+let filteredData = [];
+let dataFavorites = [];
+let product;
 let blocks = []; // some collection of blocks in UI (usage not shown here)
 let productsExpanded = false;
 let isTransitioning = false;
 let isOpen = false;
-const current_product = {
+let imageName; // fot github pages to work I need to do like I did with pop()
+let current_product = {
     adds: [],
+    totalPrice: 0,
+    addsTypes: [],
     size: "s",
+    productSize: "",
     index: 0,
+    id: "1",
     type: "coffee",
 };
+const current_products = [];
 // 🔁 Constants & Timer Variables
 const INTERVAL = 3000;
 const lines = [".first_line", ".second_line", ".third_line"];
@@ -67,28 +93,104 @@ let remaining = INTERVAL;
 const isHome = () => main.classList.contains("home");
 // Backup of the original main children nodes (to reset DOM if needed)
 const backup = Array.from(main.childNodes);
-//
-async function getProducts() {
+// API REQUESTS
+async function getFavorites() {
     try {
-        const response = await fetch("products.json");
+        loader.style.display = "block";
+        slider.style.display = "none";
+        three_lines.style.display = "none";
+        const response = await fetch("https://6kt29kkeub.execute-api.eu-central-1.amazonaws.com/products/favorites");
         if (!response.ok) {
+            loader.textContent = "Something went wrong. Please, refresh the page";
             throw new Error("Network response was not ok");
         }
-        data = await response.json();
+        const result = await response.json();
+        dataFavorites = result.data;
+        loader.style.display = "none";
+        slider.style.display = "flex";
+        three_lines.style.display = "flex";
+        drinks.push(...dataFavorites.map((product) => `images/slider_${product.id}.png`));
+        drinks_names.push(...dataFavorites.map((p) => p.name));
+        drinks_info.push(...dataFavorites.map((p) => p.description));
+        drink_prices.push(...dataFavorites.map((p) => `$${p.price}`));
+        render();
     }
     catch (error) {
-        console.error("Error fetching data:", error);
+        console.log("Error fetching data:", error);
     }
 }
-for (let i = 1; i <= 3; i++) {
-    drinks.push(`assets/coffee-slider-${i}.png`);
+async function getProducts() {
+    const loader = document.createElement("div");
+    loader.className = "second-loader";
+    loader.textContent = "Loading...";
+    main.appendChild(loader);
+    console.log("[getProducts] Starting fetch");
+    try {
+        const response = await fetch("https://6kt29kkeub.execute-api.eu-central-1.amazonaws.com/products");
+        console.log("[getProducts] Response received", response);
+        if (!response.ok) {
+            console.log("[getProducts] Response NOT OK");
+            throw new Error("Network response was no ok");
+        }
+        const result = await response.json();
+        console.log("[getProducts] Data received", result);
+        fullData = result.data;
+        data = result.data;
+        const products = result.data;
+        for (const product of products) {
+            const ext = product.category === "coffee" ? "jpg" : "png";
+            const imagePath = `images/${product.id}.${ext}`;
+            if (product.category in productImages) {
+                productImages[product.category].push(imagePath);
+            }
+        }
+        // console.log(productImages);
+        return true;
+    }
+    catch (error) {
+        console.log("[getProducts] Catch block hit:", error);
+        main.classList.remove(...mainClasses);
+        main.classList.add("menu");
+        main.innerHTML = "";
+        const h1 = document.createElement("h1");
+        h1.innerHTML = `Behind each of our cups <br />
+	              hides an <span>amazing surprise</span>`;
+        const errorDiv = document.createElement("div");
+        errorDiv.className = "fetch-error";
+        errorDiv.textContent = "Something went wrong. Please, refresh the page";
+        main.appendChild(h1);
+        main.appendChild(errorDiv);
+        console.log("Error fetching data:", error);
+        return false;
+    }
+    finally {
+        console.log("[getProducts] Finally block");
+        if (main.contains(loader)) {
+            main.removeChild(loader);
+        }
+    }
 }
-for (let i = 1; i <= 8; i++) {
-    coffee_src.push(`assets/coffee-${i}.jpg`);
-    dessert_src.push(`assets/dessert-${i}.png`);
-}
-for (let i = 1; i <= 4; i++) {
-    tea_src.push(`assets/tea-${i}.png`);
+async function getProduct(id) {
+    const loader = document.createElement("div");
+    loader.textContent = "Loading...";
+    loader.style.fontSize = "100px";
+    backdrop.appendChild(loader);
+    try {
+        const response = await fetch(`https://6kt29kkeub.execute-api.eu-central-1.amazonaws.com/products/${id}`);
+        if (!response.ok) {
+            throw new Error("Network response was no ok");
+        }
+        const result = await response.json();
+        backdrop.removeChild(loader);
+        return result.data;
+    }
+    catch (error) {
+        backdrop.removeChild(loader);
+        backdrop.style.display = "none";
+        console.log("Error fetching data:", error);
+        alert("Something went wrong. Please, try again");
+        return null;
+    }
 }
 function createImage() {
     const img = document.createElement("img");
@@ -102,29 +204,18 @@ function createImage() {
     drink.appendChild(img);
 }
 function createDrinkName() {
-    const drinks_names = [
-        "S’mores Frappuccino",
-        "Caramel Macchiato",
-        "Ice coffee",
-    ];
     const drink_name = document.createElement("h3");
     drink_name.textContent = drinks_names[current];
     drink_name.className = "drink-name";
     drink.appendChild(drink_name);
 }
 function createDrinkInfo() {
-    const drinks_info = [
-        "This new drink takes an espresso and mixes it with brown sugar and cinnamon before being topped with oat milk.",
-        "Fragrant and unique classic espresso with rich caramel-peanut syrup, with cream under whipped thick foam.",
-        "A popular summer drink that tones and invigorates. Prepared from coffee, milk and ice.",
-    ];
     const drink_info = document.createElement("p");
     drink_info.textContent = drinks_info[current];
     drink_info.className = "drink-info";
     drink.appendChild(drink_info);
 }
 function createDrinkPrice() {
-    const drink_prices = ["$5.50", "$5.00", "$4.50"];
     const drink_price = document.createElement("p");
     drink_price.textContent = drink_prices[current];
     drink_price.className = "price";
@@ -252,32 +343,47 @@ slider.addEventListener("touchend", () => {
     endX = 0;
 });
 button.addEventListener("click", () => menu_link.click());
-menu_link.addEventListener("click", (e) => {
+menu_link.addEventListener("click", async (e) => {
     const target = e.currentTarget;
     target.classList.add("disable_cursor");
     menu_link.style.borderBottom = "2px solid #403f3d";
+    // const cart = JSON.parse(localStorage.getItem("cart") ?? "[]");
+    // const storedCurrentProducts = localStorage.getItem("current_products");
+    // if (storedCurrentProducts?.length === 0) cart_button.style.display = "none";
+    cart_button.classList.remove("disable_cursor");
+    cart_button.style.borderBottom = "";
+    const cart = JSON.parse(localStorage.getItem("cart") ?? "[]");
+    if (cart.length === 0) {
+        cart_button.style.display = "none";
+    }
     cross.click();
+    //
+    if (data.length === 0) {
+        const success = await getProducts();
+        if (!success)
+            return;
+    }
     const h1 = document.createElement("h1");
     const buttons = document.createElement("div");
     const content = document.createElement("div");
     const load_more_button = document.createElement("div");
     h1.innerHTML = `Behind each of our cups <br />
-                  hides an <span>amazing surprise</span>`;
+	              hides an <span>amazing surprise</span>`;
     buttons.innerHTML = `
-    <div class="button coffee">
-      <img src="assets/coffee.png" alt="" />
-      <p>Coffee</p>
-    </div>
-    <div class="button tea">
-      <img src="assets/tea.png" alt="" />
-      <p>Tea</p>
-    </div>
-    <div class="button dessert">
-      <img src="assets/dessert.png" alt="" />
-      <p>Dessert</p>
-    </div>`;
+		<div class="button coffee">
+		  <img src="assets/coffee.png" alt="" />
+		  <p>Coffee</p>
+		</div>
+		<div class="button tea">
+		  <img src="assets/tea.png" alt="" />
+		  <p>Tea</p>
+		</div>
+		<div class="button dessert">
+		  <img src="assets/dessert.png" alt="" />
+		  <p>Dessert</p>
+		</div>`;
     load_more_button.innerHTML = `<i class="fa-solid fa-rotate-right"></i>`;
-    main.classList.remove("home");
+    main.classList.remove(...mainClasses);
     main.classList.add("menu");
     buttons.classList.add("buttons");
     content.classList.add("content");
@@ -287,25 +393,20 @@ menu_link.addEventListener("click", (e) => {
     main.appendChild(buttons);
     main.appendChild(content);
     main.appendChild(load_more_button);
-    // Helper function to safely select a single element
-    // function select<T extends Element>(selector: string): T {
-    // 	const el = document.querySelector(selector);
-    // 	if (!el) throw new Error(`Element not found: ${selector}`);
-    // 	return el as T;
-    // }
     // Function to render products of a specific category
     async function renderCategory(category) {
         const buttonsEls = buttons.querySelectorAll(".button");
         buttonsEls.forEach((btn) => btn.classList.remove("disable_cursor"));
         const activeButton = buttons.querySelector(`.${category}`);
         activeButton.classList.add("disable_cursor");
-        await getProducts(); // assuming this updates global `data`
+        // await getProducts(); // assuming this updates global `data`
         content.innerHTML = "";
-        const filteredData = data.filter((el) => el.category === category);
+        current_product.type = category;
+        filteredData = fullData.filter((el) => el.category === category);
         const srcMap = {
-            coffee: coffee_src,
-            tea: tea_src,
-            dessert: dessert_src,
+            coffee: productImages.coffee,
+            tea: productImages.tea,
+            dessert: productImages.dessert,
         };
         const sources = srcMap[category];
         filteredData.forEach((item, i) => {
@@ -332,7 +433,6 @@ menu_link.addEventListener("click", (e) => {
         });
         content.dispatchEvent(new Event("contentchange"));
     }
-    // Add event listeners for category buttons
     buttons.querySelectorAll(".button").forEach((btn) => {
         btn.addEventListener("click", () => {
             buttons.querySelectorAll(".button").forEach((b) => {
@@ -353,54 +453,143 @@ menu_link.addEventListener("click", (e) => {
     buttons.querySelector(".dessert")?.addEventListener("click", () => {
         renderCategory("dessert");
     });
-    // Initial load coffee category
-    buttons.querySelector(".coffee")?.click();
     // Handling content change event
     content.addEventListener("contentchange", () => {
         blocks = Array.from(document.querySelectorAll(".block"));
         productsExpanded = false;
         handleResponsiveDisplay();
-        getProducts();
+        // getProducts();
         blocks.forEach((block, i) => {
-            block.addEventListener("click", () => {
-                document.body.classList.add("modal-open");
-                backdrop.style.display = "block";
-                modal.style.display = "flex";
-                button_S.classList.add("modal_button_active");
-                current_product.size = "s";
+            block.addEventListener("click", async () => {
                 const img = block.querySelector("img");
                 if (!img)
                     return;
+                current_product = {
+                    adds: [],
+                    totalPrice: 0,
+                    addsTypes: [],
+                    size: "s",
+                    productSize: "",
+                    index: i,
+                    id: img.src.split("/").pop()?.split(".")[0] || "",
+                    type: current_product.type, // Preserve the current category
+                };
                 modal_photo.src = img.src;
                 modal_photo.alt = `modal-photo-${i}`;
-                // Filter data based on image src
-                if (modal_photo.src.includes("coffee")) {
-                    data = data.filter((el) => el.category === "coffee");
-                    current_product.type = "coffee";
+                current_product.id =
+                    modal_photo.src.split("/").pop()?.split(".")[0] || "";
+                document.body.classList.add("modal-open");
+                backdrop.style.display = "block";
+                product = await getProduct(current_product.id);
+                if (!product) {
+                    console.log("error");
+                    // backdrop.removeChild(loader);
+                    return;
                 }
-                else if (modal_photo.src.includes("tea")) {
-                    data = data.filter((el) => el.category === "tea");
-                    current_product.type = "tea";
-                }
-                else if (modal_photo.src.includes("dessert")) {
-                    data = data.filter((el) => el.category === "dessert");
-                    current_product.type = "dessert";
-                }
+                // backdrop.removeChild(loader);
+                // console.log(product);
+                modal.style.display = "flex";
+                modal_name.textContent = product.name;
+                modal_description.textContent = product.description;
+                // current_product.adds = [];
                 current_product.index = i;
-                modal_name.textContent = data[i]?.name ?? "";
-                modal_description.textContent = data[i]?.description ?? "";
-                S.textContent = data[i]?.sizes.s.size ?? "";
-                M.textContent = data[i]?.sizes.m.size ?? "";
-                L.textContent = data[i]?.sizes.l.size ?? "";
-                first_additive.textContent = data[i]?.additives[0]?.name ?? "";
-                second_additive.textContent = data[i]?.additives[1]?.name ?? "";
-                third_additive.textContent = data[i]?.additives[2]?.name ?? "";
-                // total_price.textContent = `$${data[i]?.price}`;
-                total_price.textContent = data[i]?.price ? `$${data[i].price}` : "";
+                createSizes();
+                createAdditives();
+                total_price.textContent = product.price ? `$${product.price}` : "";
+                current_product.totalPrice = parseFloat(product.price);
+                current_product.productSize = product.sizes[current_product.size].size;
+                // } catch (error) {
+                // 	const err = document.createElement("div");
+                // 	err.textContent = "Something went wrong. Please, refresh the page";
+                // 	err.style.fontSize = "100px";
+                // 	backdrop.appendChild(err);
+                // 	console.log(error);
+                // }
+                // document.body.classList.add("modal-open");
+                // backdrop.style.display = "block";
+                // Filter data based on image src
+                // if (modal_photo.src.includes("coffee")) {
+                // 	filteredData = fullData.filter((el) => el.category === "coffee");
+                // 	current_product.type = "coffee";
+                // } else if (modal_photo.src.includes("tea")) {
+                // 	filteredData = fullData.filter((el) => el.category === "tea");
+                // 	current_product.type = "tea";
+                // } else if (modal_photo.src.includes("dessert")) {
+                // 	filteredData = fullData.filter((el) => el.category === "dessert");
+                // 	current_product.type = "dessert";
+                // }
+                // Delete this ^ from my old project coffee house AND add some changes to THIS project, .adds = [] and modal_photo.src.split("/") etc
             });
         });
     });
-    // Rotate arrow button
+    // Initial load coffee category
+    buttons.querySelector(".coffee")?.click();
+    const createAdditives = () => {
+        const divs = ["first", "second", "third"];
+        const p1s = ["additive_one", "additive_two", "additive_three"];
+        const p2s = ["first_additive", "second_additive", "third_additive"];
+        additives_block.innerHTML = "";
+        product?.additives.forEach((additive, i) => {
+            const div = document.createElement("div");
+            const p1 = document.createElement("p");
+            const p2 = document.createElement("p");
+            div.className = divs[i] ?? "";
+            p1.className = p1s[i] ?? "";
+            p2.classList = p2s[i] ?? "";
+            p1.textContent = (i + 1).toString();
+            p2.textContent = additive.name;
+            div.addEventListener("click", () => {
+                div.classList.toggle("modal_button_active");
+                // filter();
+                additiveFilter(i, additive.name);
+                // current_product.addsTypes.push(additive.name);
+                updateTotal();
+            });
+            div.appendChild(p1);
+            div.appendChild(p2);
+            additives_block.appendChild(div);
+        });
+    };
+    const createSizes = () => {
+        const divs = {
+            s: "small",
+            m: "medium",
+            l: "large",
+            xl: "extra_large",
+            xxl: "extra_extra_large",
+        };
+        const p1s = ["s", "m", "l", "xl", "xxl"];
+        const sizeDivs = [];
+        sizes_block.innerHTML = "";
+        p1s.forEach((key) => {
+            const size = product?.sizes?.[key];
+            if (!size)
+                return;
+            const div = document.createElement("div");
+            const p1 = document.createElement("p");
+            const p2 = document.createElement("p");
+            div.className = divs[key] ?? "";
+            p1.textContent = key.toUpperCase() ?? "";
+            p2.textContent = size.size;
+            p1.className = key;
+            p2.className = `size_${key}`;
+            div.appendChild(p1);
+            div.appendChild(p2);
+            sizes_block.appendChild(div);
+            sizeDivs.push(div);
+            div.addEventListener("click", () => {
+                sizeDivs.forEach((b) => b.classList.remove("modal_button_active"));
+                div.classList.add("modal_button_active");
+                current_product.size = key;
+                current_product.productSize = size.size;
+                console.log(current_product.productSize);
+                // filter();
+                updateTotal();
+            });
+        });
+        sizeDivs[0]?.classList.add("modal_button_active");
+        current_product.size = "s";
+    };
     const rotate_arrow = load_more_button.querySelector(".fa-rotate-right");
     let rotation = 0;
     rotate_arrow?.addEventListener("click", () => {
@@ -446,7 +635,12 @@ links.forEach((link, i) => {
                 cross.click();
             menu_link.style.borderBottom = "";
             menu_link.classList.remove("disable_cursor");
-            main.classList.remove("menu");
+            const cart = JSON.parse(localStorage.getItem("cart") ?? "[]");
+            if (cart.length === 0)
+                cart_button.style.display = "none";
+            cart_button.style.borderBottom = "";
+            cart_button.classList.remove("disable_cursor");
+            main.classList.remove(...mainClasses);
             main.classList.add("home");
             main.replaceChildren(...backup);
             document.querySelector("video").play();
@@ -464,7 +658,7 @@ burger_menu_links.forEach((link, i) => {
         else if (i !== 3) {
             cross.click();
             menu_link.classList.remove("disable_cursor");
-            main.classList.remove("menu");
+            main.classList.remove(...mainClasses);
             main.classList.add("home");
             main.replaceChildren(...backup);
             document.querySelector("video").play();
@@ -523,89 +717,829 @@ function closeMenu() {
     burger_menu.addEventListener("transitionend", onEnd);
 }
 const updateTotal = () => {
-    const item = data[current_product.index];
-    const base = parseFloat(item?.price ?? "0");
-    const sizeAdd = parseFloat(item?.sizes?.[current_product.size]?.["add-price"] ?? "0");
-    const addsSum = current_product.adds.reduce((s, i) => s + parseFloat(item?.additives?.[i]?.["add-price"] ?? "0"), 0);
-    const total = base + sizeAdd + addsSum;
+    // const item = filteredData[current_product.index];
+    // console.log(fullData);
+    // console.log(filteredData);
+    // const base = parseFloat(product?.price ?? "0");
+    const sizeAdd = parseFloat(product?.sizes?.[current_product.size]?.["price"] ?? "0");
+    // console.log(sizeAdd);
+    const addsSum = current_product.adds.reduce((s, i) => s + parseFloat(product?.additives?.[i]?.["price"] ?? "0"), 0);
+    // console.log(addsSum);
+    const total = sizeAdd + addsSum;
     total_price.textContent = `$${total.toFixed(2)}`;
+    current_product.totalPrice = total;
 };
-const filter = () => {
-    if (current_product.type === "coffee")
-        data = data.filter((el) => el.category === "coffee");
-    else if (current_product.type === "tea")
-        data = data.filter((el) => el.category === "tea");
-    else if (current_product.type === "dessert")
-        data = data.filter((el) => el.category === "dessert");
-};
-const additiveFilter = (num) => {
-    if (current_product.adds.includes(num))
+// const filter = (): void => {
+// 	if (current_product.type === "coffee")
+// 		filteredData = fullData.filter((el) => el.category === "coffee");
+// 	else if (current_product.type === "tea")
+// 		filteredData = fullData.filter((el) => el.category === "tea");
+// 	else if (current_product.type === "dessert")
+// 		filteredData = fullData.filter((el) => el.category === "dessert");
+// };
+const additiveFilter = (num, additiveName) => {
+    if (current_product.adds.includes(num)) {
         current_product.adds = current_product.adds.filter((additive) => additive !== num);
+        current_product.addsTypes = current_product.addsTypes.filter((additive) => additive !== additiveName);
+        // console.log(current_product.addsTypes);
+    }
     else {
         current_product.adds.push(num);
+        current_product.addsTypes.push(additiveName);
+        // console.log(current_product.addsTypes);
     }
 };
-[button_S, button_M, button_L].forEach((btn) => {
-    btn.addEventListener("click", () => {
-        [button_S, button_M, button_L].forEach((b) => {
-            b.classList.remove("modal_button_active");
-        });
-        btn.classList.add("modal_button_active");
-    });
-});
-[button_first_additive, button_second_additive, button_third_additive].forEach((btn) => {
-    btn.addEventListener("click", () => {
-        btn.classList.toggle("modal_button_active");
-    });
-});
-button_S.addEventListener("click", () => {
-    current_product.size = "s";
-    filter();
-    updateTotal();
-});
-button_M.addEventListener("click", () => {
-    current_product.size = "m";
-    filter();
-    updateTotal();
-});
-button_L.addEventListener("click", () => {
-    current_product.size = "l";
-    filter();
-    updateTotal();
-});
-button_first_additive.addEventListener("click", () => {
-    filter();
-    additiveFilter(0);
-    updateTotal();
-});
-button_second_additive.addEventListener("click", () => {
-    filter();
-    additiveFilter(1);
-    updateTotal();
-});
-button_third_additive.addEventListener("click", () => {
-    filter();
-    additiveFilter(2);
-    updateTotal();
-});
+// [button_S, button_M, button_L].forEach((btn) => {
+// 	btn.addEventListener("click", () => {
+// 		[button_S, button_M, button_L].forEach((b) => {
+// 			b.classList.remove("modal_button_active");
+// 		});
+// 		btn.classList.add("modal_button_active");
+// 	});
+// });
+// [button_first_additive, button_second_additive, button_third_additive].forEach(
+// 	(btn) => {
+// 		btn.addEventListener("click", () => {
+// 			btn.classList.toggle("modal_button_active");
+// 		});
+// 	}
+// );
+// button_first_additive.addEventListener("click", () => {
+// 	filter();
+// 	additiveFilter(0);
+// 	updateTotal();
+// });
+// button_second_additive.addEventListener("click", () => {
+// 	filter();
+// 	additiveFilter(1);
+// 	updateTotal();
+// });
+// button_third_additive.addEventListener("click", () => {
+// 	filter();
+// 	additiveFilter(2);
+// 	updateTotal();
+// });
 backdrop.addEventListener("click", () => close.click());
 close.addEventListener("click", () => {
     document.body.classList.remove("modal-open");
     backdrop.style.display = "none";
     modal.style.display = "none";
     [
-        button_S,
-        button_M,
-        button_L,
-        button_first_additive,
-        button_second_additive,
-        button_third_additive,
+        document.querySelector(".modal .small"),
+        document.querySelector(".modal .medium"),
+        document.querySelector(".modal .large"),
+        document.querySelector(".modal .first_additive"),
+        document.querySelector(".modal .second_additive"),
+        document.querySelector(".modal .third_additive"),
     ].forEach((btn) => {
-        btn.classList.remove("modal_button_active");
+        btn?.classList.remove("modal_button_active");
     });
-    getProducts();
+    current_product = {
+        adds: [],
+        totalPrice: 0,
+        addsTypes: [],
+        size: "s",
+        productSize: "",
+        index: 0,
+        id: "",
+        type: current_product.type,
+    };
+    current_product.adds = [];
+    product = null;
 });
-render(); // initial render
-getProducts();
+document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && modal.style.display === "flex") {
+        close.click();
+    }
+});
+add_cart.addEventListener("click", () => {
+    addToCart();
+    // cart_button.classList.remove("disable_cursor");
+    // cart_button.style.borderBottom = "";
+});
+const addToCart = () => {
+    const stored = localStorage.getItem("cartCount");
+    count = stored !== null ? parseInt(stored) : 0;
+    const storedCart = localStorage.getItem("cart");
+    const cart = storedCart ? JSON.parse(storedCart) : [];
+    if (product) {
+        cart.push(product);
+        current_products.push(JSON.parse(JSON.stringify(current_product)));
+        console.log(current_products);
+        localStorage.setItem("cart", JSON.stringify(cart));
+        localStorage.setItem("current_products", JSON.stringify(current_products));
+    }
+    // } catch (error) {
+    // 	const err = document.createElement("div");
+    // 	err.textContent = "Something went wrong. Please, refresh the page";
+    // 	err.style.fontSize = "100px";
+    // 	backdrop.appendChild(err);
+    // 	console.log(error);
+    // }
+    count++;
+    localStorage.setItem("cartCount", count.toString());
+    // console.log(current_product.totalPrice);
+    updateCartNumber();
+    close.click();
+    cart_button.style.display = "inline";
+};
+const updateCartNumber = () => {
+    const cart_number = document.querySelector(".cart_number");
+    count = parseInt(localStorage.getItem("cartCount") || "0");
+    if (cart_number) {
+        cart_number.textContent = count > 0 ? count.toString() : "";
+    }
+};
+const updateCart = () => {
+    const cart_products = document.querySelector(".cart_products");
+    const cart_total_price = document.querySelector(".cart_price");
+    cart_products.innerHTML = "";
+    const cart = localStorage.getItem("cart");
+    let totalCartPrice = 0;
+    if (cart) {
+        const cartProducts = JSON.parse(cart);
+        cartProducts.forEach((product, i) => {
+            const trash = document.createElement("i");
+            const productInfo = document.createElement("div");
+            const productRow = document.createElement("div");
+            const img = document.createElement("img");
+            const product_name = document.createElement("p");
+            const product_price = document.createElement("p");
+            trash.classList.add("fa-solid", "fa-trash");
+            productInfo.className = "product_info";
+            productRow.className = "product_row";
+            product_name.className = "product_name";
+            product_price.className = "product_price";
+            img.src =
+                product.category === "coffee"
+                    ? `images/${product.id}.jpg `
+                    : `images/${product.id}.png`;
+            img.alt = `cart-product-${i}`;
+            product_name.textContent = product.name;
+            const productCustomization = current_products[i] || {
+                productSize: "N/A",
+                addsTypes: [],
+                totalPrice: parseFloat(product.price || "0"),
+            };
+            product_price.textContent = `$${productCustomization.totalPrice.toFixed(2)}`;
+            totalCartPrice += productCustomization.totalPrice;
+            // console.log(current_product);
+            trash.addEventListener("click", () => {
+                cartProducts.splice(i, 1);
+                current_products.splice(i, 1);
+                localStorage.setItem("cart", JSON.stringify(cartProducts));
+                localStorage.setItem("current_products", JSON.stringify(current_products));
+                let count = parseInt(localStorage.getItem("cartCount") || "0");
+                count = Math.max(0, count - 1);
+                localStorage.setItem("cartCount", count.toString());
+                // const indexToRemove = cartProducts.findIndex(
+                // 	(p) => p.id === product.id
+                // );
+                // if (indexToRemove !== -1) {
+                // 	cartProducts.splice(indexToRemove, 1);
+                // 	// current_products.splice(i, 1)
+                // 	localStorage.setItem("cart", JSON.stringify(cartProducts));
+                // 	let count = parseInt(localStorage.getItem("cartCount") || "0");
+                // 	count = Math.max(0, count - 1);
+                // 	localStorage.setItem("cartCount", count.toString());
+                updateCartNumber();
+                updateCart();
+                // }
+                // const updatedCart = cartProducts.filter((p) => p.id !== product.id);
+                // localStorage.setItem("cart", JSON.stringify(updatedCart));
+                // const newCount = updateCart.length;
+                // localStorage.setItem("cartCount", newCount.toString());
+            });
+            const product_info_div = document.createElement("div");
+            product_info_div.className = "product_info_div";
+            const product_type = document.createElement("div");
+            product_type.className = "product_type";
+            const sizeSpan = document.createElement("span");
+            sizeSpan.textContent = productCustomization.productSize;
+            sizeSpan.className = "product_size";
+            const spans = [sizeSpan];
+            productCustomization.addsTypes.forEach((addType) => {
+                const addSpan = document.createElement("span");
+                addSpan.className = "product_additive";
+                addSpan.textContent = addType;
+                spans.push(addSpan);
+            });
+            spans.forEach((span, i) => {
+                if (i < spans.length - 1) {
+                    span.textContent += ",";
+                }
+                product_type.appendChild(span);
+            });
+            productInfo.appendChild(trash);
+            productInfo.appendChild(img);
+            product_info_div.appendChild(product_name);
+            product_info_div.appendChild(product_type);
+            productInfo.appendChild(product_info_div);
+            productRow.appendChild(productInfo);
+            productRow.appendChild(product_price);
+            cart_products?.appendChild(productRow);
+        });
+        cart_total_price.textContent = `$${totalCartPrice.toFixed(2)}`;
+    }
+};
+cart_button.addEventListener("click", () => {
+    main.classList.remove(...mainClasses);
+    main.classList.add("cart");
+    cart_button.classList.add("disable_cursor");
+    menu_link.classList.remove("disable_cursor");
+    cart_button.style.borderBottom = "2px solid #403f3d";
+    menu_link.style.borderBottom = "";
+    main.innerHTML = "";
+    const h1 = document.createElement("h1");
+    h1.textContent = "Cart";
+    h1.className = "cart";
+    const div = document.createElement("div");
+    const div2 = document.createElement("div");
+    const p1 = document.createElement("p");
+    const p2 = document.createElement("p");
+    p1.textContent = "Total:";
+    p2.textContent = "$0.00";
+    p1.className = "cart_total";
+    p2.className = "cart_price";
+    div.className = "cart_total_price";
+    div2.className = "cart_products";
+    div.appendChild(p1);
+    div.appendChild(p2);
+    const sign_in = document.createElement("div");
+    sign_in.textContent = "Sign In";
+    sign_in.className = "sign_in";
+    const registration = document.createElement("div");
+    registration.textContent = "Registration";
+    registration.className = "registration";
+    const buttons = document.createElement("div");
+    buttons.className = "cart_buttons";
+    main.appendChild(h1);
+    main.appendChild(div2);
+    main.appendChild(div);
+    if (localStorage.auth === "signed-in") {
+        // payment option
+        // address
+        const div3 = document.createElement("div");
+        const div4 = document.createElement("div");
+        const p3 = document.createElement("p");
+        const p4 = document.createElement("p");
+        const p5 = document.createElement("p");
+        const p6 = document.createElement("p");
+        p3.textContent = "Address:";
+        p4.textContent = "localstorage";
+        p5.textContent = "Pay by:";
+        p6.textContent = "localstorage";
+        div3.className = "address";
+        div4.className = "pay_by";
+        const confirm_order = document.createElement("div");
+        confirm_order.textContent = "Confirm";
+        confirm_order.className = "confirm_order";
+        div3.appendChild(p3);
+        div3.appendChild(p4);
+        div4.appendChild(p5);
+        div4.appendChild(p6);
+        main.appendChild(div3);
+        main.appendChild(div4);
+        main.appendChild(confirm_order);
+    }
+    else {
+        buttons.appendChild(sign_in);
+        buttons.appendChild(registration);
+        main.appendChild(buttons);
+    }
+    updateCart(); // render products in cart
+});
+document.addEventListener("click", (e) => {
+    const target = e.target;
+    if (target.classList.contains("sign_in")) {
+        main.classList.remove(...mainClasses);
+        main.classList.add("login");
+        cart_button.style.borderBottom = "";
+        cart_button.classList.remove("disable_cursor");
+        main.innerHTML = `
+			<h1>Sign In</h1>
+			<label class="label_login">
+				Login
+				<input class="input_login" type="text" placeholder="Enter login">
+				<i class="fa-solid fa-circle-exclamation error_icon"></i>
+			</label>
+			<p class="login_error"></p>
+			<label class="label_password">
+				Password
+				<input class="input_password" type="password" placeholder="Enter password">
+				<i class="fa-solid fa-circle-exclamation error_icon"></i>
+			</label>
+			<p class="password_error"></p>
+			<p class="auth_error"></p>
+			<div class="login_button disabled" style="cursor: not-allowed;">Sign In</div>
+		`;
+        // DOM elements
+        const input_login = main.querySelector(".input_login");
+        const input_password = main.querySelector(".input_password");
+        const login_error = main.querySelector(".login_error");
+        const password_error = main.querySelector(".password_error");
+        const auth_error = main.querySelector(".auth_error");
+        const login_icon = main.querySelector(".label_login .error_icon");
+        const password_icon = main.querySelector(".label_password .error_icon");
+        const sign_in = main.querySelector(".login_button");
+        let isLoginValid = false;
+        let isPasswordValid = false;
+        const validateLogin = (value) => {
+            const startsWithLetter = /^[a-zA-Z]/.test(value);
+            const onlyLetters = /^[a-zA-Z]+$/.test(value);
+            return value.length >= 3 && startsWithLetter && onlyLetters;
+        };
+        const validatePassword = (value) => {
+            const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(value);
+            return value.length >= 6 && hasSpecialChar;
+        };
+        const updateButtonState = () => {
+            sign_in.classList.toggle("disabled", !(isLoginValid && isPasswordValid));
+            sign_in.style.cursor =
+                isLoginValid && isPasswordValid ? "pointer" : "not-allowed";
+        };
+        const setInputError = (input, error, icon, message) => {
+            input.style.border = "1px solid red";
+            icon.style.display = "inline-block";
+            error.textContent = message;
+            // input.setAttribute("aria-invalid", "true");
+            // input.setAttribute("aria-describedby", error.className);
+            // icon.setAttribute("aria-hidden", "true"); // Icon is decorative
+        };
+        const clearInputError = (input, error, icon) => {
+            input.style.border = "";
+            icon.style.display = "none";
+            error.textContent = "";
+        };
+        input_login.addEventListener("blur", () => {
+            const value = input_login.value.trim();
+            if (!value) {
+                setInputError(input_login, login_error, login_icon, "Login is required");
+                isLoginValid = false;
+            }
+            else if (!validateLogin(value)) {
+                setInputError(input_login, login_error, login_icon, "Login must be 3+ characters, start with a letter, and contain only English letters");
+                isLoginValid = false;
+            }
+            else {
+                clearInputError(input_login, login_error, login_icon);
+                isLoginValid = true;
+            }
+            updateButtonState();
+        });
+        input_login.addEventListener("focus", () => {
+            clearInputError(input_login, login_error, login_icon);
+            auth_error.textContent = "";
+        });
+        input_password.addEventListener("blur", () => {
+            const value = input_password.value.trim();
+            if (!value) {
+                setInputError(input_password, password_error, password_icon, "Password is required");
+                isPasswordValid = false;
+            }
+            else if (!validatePassword(value)) {
+                setInputError(input_password, password_error, password_icon, "Password must be 6+ characters and include at least 1 special character");
+                isPasswordValid = false;
+            }
+            else {
+                clearInputError(input_password, password_error, password_icon);
+                isPasswordValid = true;
+            }
+            updateButtonState();
+        });
+        input_password.addEventListener("focus", () => {
+            clearInputError(input_password, password_error, password_icon);
+            auth_error.textContent = "";
+        });
+        // Initialize button state
+        sign_in.classList.add("disabled");
+        sign_in.style.cursor = "not-allowed";
+        // Sign In button click handler
+        sign_in.addEventListener("click", async () => {
+            if (!isLoginValid || !isPasswordValid)
+                return;
+            auth_error.textContent = "";
+            // sign_in.classList.add("loading");
+            sign_in.textContent = "Signing In...";
+            try {
+                const response = await fetch("https://6kt29kkeub.execute-api.eu-central-1.amazonaws.com/auth/login", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        login: input_login.value.trim(),
+                        password: input_password.value.trim(),
+                    }),
+                });
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || "Authentication failed");
+                }
+                // On success, redirect to Menu page
+                //localStorage.setItem();
+                localStorage.setItem("auth", "signed-in");
+                menu_link.click();
+            }
+            catch (error) {
+                auth_error.textContent = "Incorrect login or password";
+                auth_error.style.color = "red";
+            }
+            finally {
+                // sign_in.classList.remove("loading");
+                sign_in.textContent = "Sign In";
+            }
+        });
+    }
+    else if (target.classList.contains("registration")) {
+        const cities = ["New York", "Los Angeles", "Chicago"];
+        const streets = {
+            "New York": [
+                "Broadway",
+                "Fifth Avenue",
+                "Wall Street",
+                "Park Avenue",
+                "Madison Avenue",
+                "Times Square",
+                "Lexington Avenue",
+                "Seventh Avenue",
+                "Columbus Avenue",
+                "Amsterdam Avenue",
+            ],
+            "Los Angeles": [
+                "Hollywood Boulevard",
+                "Sunset Boulevard",
+                "Wilshire Boulevard",
+                "Rodeo Drive",
+                "Melrose Avenue",
+                "Venice Boulevard",
+                "Santa Monica Boulevard",
+                "Beverly Drive",
+                "La Brea Avenue",
+                "Vine Street",
+            ],
+            Chicago: [
+                "Michigan Avenue",
+                "State Street",
+                "Wabash Avenue",
+                "Lake Shore Drive",
+                "Clark Street",
+                "Dearborn Street",
+                "LaSalle Street",
+                "Randolph Street",
+                "Washington Street",
+                "Madison Street",
+            ],
+        };
+        main.classList.remove(...mainClasses);
+        main.classList.add("register");
+        cart_button.style.borderBottom = "";
+        cart_button.classList.remove("disable_cursor");
+        main.innerHTML = `
+	<h1>Registration</h1>
+	<label class="label_login">
+		Login
+		<input class="input_login" type="text" placeholder="Enter login">
+		<i class="fa-solid fa-circle-exclamation error_icon"></i>
+		<p class="login_error"></p>
+	</label>
+	<label class="label_password">
+		Password
+		<input class="input_password" type="password" placeholder="Enter password">
+		<i class="fa-solid fa-circle-exclamation error_icon"></i>
+		<p class="password_error"></p>
+	</label>
+	<label class="label_confirm_password">
+		Confirm Password
+		<input class="input_confirm_password" type="password" placeholder="Confirm password">
+		<i class="fa-solid fa-circle-exclamation error_icon"></i>
+		<p class="confirm_password_error"></p>
+	</label>
+	<label class="label_city">
+		City
+		<select class="input_city">
+			<option value="" disabled selected>Select a city</option>
+			${cities.map((city) => `<option value="${city}">${city}</option>`).join("")}
+		</select>
+		<i class="fa-solid fa-circle-exclamation error_icon"></i>
+		<p class="city_error"></p>
+	</label>
+	<label class="label_street">
+		Street
+		<select class="input_street">
+			<option value="" disabled selected>Select a street</option>
+		</select>
+		<i class="fa-solid fa-circle-exclamation error_icon"></i>
+		<p class="street_error"></p>
+	</label>
+	<label class="label_house_number">
+		House Number
+		<input class="input_house_number" type="text" placeholder="Enter house number" inputmode="numeric">
+		<i class="fa-solid fa-circle-exclamation error_icon"></i>
+		<p class="house_number_error"></p>
+	</label>
+	<div class="pay_by">
+		<p>Pay by</p>
+		<div class="payment_options">
+			<label class="radio-option">
+				<input type="radio" name="payment" value="cash" checked>
+				Cash
+			</label>
+			<label class="radio-option">
+				<input type="radio" name="payment" value="card">
+				Card
+			</label>
+		</div>
+	</div>
+	<p class="register_error"></p>
+	<div class="registration_button disabled" style="cursor: not-allowed;">Register</div>
+`;
+        // DOM elements
+        const input_login = main.querySelector(".input_login");
+        const input_password = main.querySelector(".input_password");
+        const input_confirm_password = main.querySelector(".input_confirm_password");
+        const select_city = main.querySelector(".input_city");
+        const select_street = main.querySelector(".input_street");
+        const input_house_number = main.querySelector(".input_house_number");
+        const input_cash = main.querySelector('input[name="payment"][value="cash"]');
+        const input_card = main.querySelector('input[name="payment"][value="card"]');
+        const login_error = main.querySelector(".login_error");
+        const password_error = main.querySelector(".password_error");
+        const confirm_password_error = main.querySelector(".confirm_password_error");
+        const city_error = main.querySelector(".city_error");
+        const street_error = main.querySelector(".street_error");
+        const house_number_error = main.querySelector(".house_number_error");
+        const register_error = main.querySelector(".register_error");
+        const register = main.querySelector(".registration_button");
+        const login_icon = main.querySelector(".label_login .error_icon");
+        const password_icon = main.querySelector(".label_password .error_icon");
+        const confirm_password_icon = main.querySelector(".label_confirm_password .error_icon");
+        const city_icon = main.querySelector(".label_city .error_icon");
+        const street_icon = main.querySelector(".label_street .error_icon");
+        const house_number_icon = main.querySelector(".label_house_number .error_icon");
+        // Validation state
+        let isLoginValid = false;
+        let isPasswordValid = false;
+        let isConfirmPasswordValid = false;
+        let isCityValid = false;
+        let isStreetValid = false;
+        let isHouseNumberValid = false;
+        // Validation Functions
+        const validateLogin = (value) => {
+            const startsWithLetter = /^[a-zA-Z]/.test(value);
+            const onlyLetters = /^[a-zA-Z]+$/.test(value);
+            return value.length >= 3 && startsWithLetter && onlyLetters;
+        };
+        const validatePassword = (value) => {
+            const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(value);
+            return value.length >= 6 && hasSpecialChar;
+        };
+        const validateConfirmPassword = (password, confirm) => {
+            return password === confirm && validatePassword(confirm);
+        };
+        const validateCity = (value) => {
+            return cities.includes(value);
+        };
+        const validateStreet = (value, city) => {
+            return city in streets ? streets[city].includes(value) : false;
+        };
+        const validateHouseNumber = (value) => {
+            const trimmedValue = value.trim();
+            if (!trimmedValue)
+                return false;
+            if (!/^\d+$/.test(trimmedValue))
+                return false; // Must be digits only
+            const num = parseInt(trimmedValue, 10);
+            return !isNaN(num) && num > 1;
+        };
+        // Update Button State
+        const updateButtonState = () => {
+            const isValid = isLoginValid &&
+                isPasswordValid &&
+                isConfirmPasswordValid &&
+                isCityValid &&
+                isStreetValid &&
+                isHouseNumberValid;
+            register.classList.toggle("disabled", !isValid);
+            register.style.cursor = isValid ? "pointer" : "not-allowed";
+        };
+        // Handle Input Styling and Error Messages
+        const setInputError = (input, error, icon, message) => {
+            input.style.border = "1px solid red";
+            icon.style.display = "inline-block";
+            error.textContent = message;
+            input.setAttribute("aria-invalid", "true");
+            input.setAttribute("aria-describedby", error.className);
+            icon.setAttribute("aria-hidden", "true");
+        };
+        const clearInputError = (input, error, icon) => {
+            input.style.border = "";
+            icon.style.display = "none";
+            error.textContent = "";
+            input.removeAttribute("aria-invalid");
+            input.removeAttribute("aria-describedby");
+        };
+        // Input Event Listeners
+        input_login.addEventListener("blur", () => {
+            const value = input_login.value.trim();
+            if (!value) {
+                setInputError(input_login, login_error, login_icon, "Login is required");
+                isLoginValid = false;
+            }
+            else if (!validateLogin(value)) {
+                setInputError(input_login, login_error, login_icon, "Login must be 3+ characters, start with a letter, and contain only English letters");
+                isLoginValid = false;
+            }
+            else {
+                clearInputError(input_login, login_error, login_icon);
+                isLoginValid = true;
+            }
+            updateButtonState();
+        });
+        input_login.addEventListener("focus", () => {
+            clearInputError(input_login, login_error, login_icon);
+            register_error.textContent = "";
+        });
+        input_password.addEventListener("blur", () => {
+            const value = input_password.value.trim();
+            if (!value) {
+                setInputError(input_password, password_error, password_icon, "Password is required");
+                isPasswordValid = false;
+            }
+            else if (!validatePassword(value)) {
+                setInputError(input_password, password_error, password_icon, "Password must be 6+ characters and include at least 1 special character");
+                isPasswordValid = false;
+            }
+            else {
+                clearInputError(input_password, password_error, password_icon);
+                isPasswordValid = true;
+            }
+            // Re-validate confirm password if it exists
+            if (input_confirm_password.value) {
+                input_confirm_password.dispatchEvent(new Event("blur"));
+            }
+            updateButtonState();
+        });
+        input_password.addEventListener("focus", () => {
+            clearInputError(input_password, password_error, password_icon);
+            register_error.textContent = "";
+        });
+        input_confirm_password.addEventListener("blur", () => {
+            const value = input_confirm_password.value.trim();
+            const password = input_password.value.trim();
+            if (!value) {
+                setInputError(input_confirm_password, confirm_password_error, confirm_password_icon, "Confirm Password is required");
+                isConfirmPasswordValid = false;
+            }
+            else if (!validateConfirmPassword(password, value)) {
+                setInputError(input_confirm_password, confirm_password_error, confirm_password_icon, "Passwords must match and meet requirements");
+                isConfirmPasswordValid = false;
+            }
+            else {
+                clearInputError(input_confirm_password, confirm_password_error, confirm_password_icon);
+                isConfirmPasswordValid = true;
+            }
+            updateButtonState();
+        });
+        input_confirm_password.addEventListener("focus", () => {
+            clearInputError(input_confirm_password, confirm_password_error, confirm_password_icon);
+            register_error.textContent = "";
+        });
+        const validateCityOnInteraction = () => {
+            const value = select_city.value;
+            if (!validateCity(value)) {
+                setInputError(select_city, city_error, city_icon, "City is required");
+                isCityValid = false;
+            }
+            else {
+                clearInputError(select_city, city_error, city_icon);
+                isCityValid = true;
+            }
+            updateButtonState();
+        };
+        select_city.addEventListener("change", () => {
+            validateCityOnInteraction();
+            select_street.innerHTML = `
+		<option value="" disabled selected>Select a street</option>
+		${select_city.value in streets
+                ? streets[select_city.value]
+                    .map((street) => `<option value="${street}">${street}</option>`)
+                    .join("")
+                : ""}
+	`;
+            isStreetValid = false;
+            select_street.dispatchEvent(new Event("change"));
+        });
+        select_city.addEventListener("blur", validateCityOnInteraction);
+        select_city.addEventListener("focus", () => {
+            clearInputError(select_city, city_error, city_icon);
+            register_error.textContent = "";
+        });
+        const validateStreetOnInteraction = () => {
+            const value = select_street.value;
+            const city = select_city.value;
+            if (!validateStreet(value, city)) {
+                setInputError(select_street, street_error, street_icon, "Street is required");
+                isStreetValid = false;
+            }
+            else {
+                clearInputError(select_street, street_error, street_icon);
+                isStreetValid = true;
+            }
+            updateButtonState();
+        };
+        select_street.addEventListener("change", validateStreetOnInteraction);
+        select_street.addEventListener("blur", validateStreetOnInteraction);
+        select_street.addEventListener("focus", () => {
+            clearInputError(select_street, street_error, street_icon);
+            register_error.textContent = "";
+        });
+        input_house_number.addEventListener("blur", () => {
+            const value = input_house_number.value.trim();
+            if (!value) {
+                setInputError(input_house_number, house_number_error, house_number_icon, "House number is required");
+                isHouseNumberValid = false;
+            }
+            else if (!validateHouseNumber(value)) {
+                setInputError(input_house_number, house_number_error, house_number_icon, "House number must be a whole number greater than 1");
+                isHouseNumberValid = false;
+            }
+            else {
+                clearInputError(input_house_number, house_number_error, house_number_icon);
+                isHouseNumberValid = true;
+            }
+            updateButtonState();
+        });
+        input_house_number.addEventListener("focus", () => {
+            clearInputError(input_house_number, house_number_error, house_number_icon);
+            register_error.textContent = "";
+        });
+        // Register Button Click Handler
+        register.addEventListener("click", async () => {
+            if (!isLoginValid ||
+                !isPasswordValid ||
+                !isConfirmPasswordValid ||
+                !isCityValid ||
+                !isStreetValid ||
+                !isHouseNumberValid) {
+                return;
+            }
+            register_error.textContent = "";
+            register.classList.add("loading");
+            register.textContent = "Registering...";
+            try {
+                const paymentMethod = input_cash.checked ? "cash" : "card";
+                const houseNumberValue = parseInt(input_house_number.value.trim(), 10);
+                const response = await fetch("https://6kt29kkeub.execute-api.eu-central-1.amazonaws.com/auth/register", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        login: input_login.value.trim(),
+                        password: input_password.value.trim(),
+                        confirmPassword: input_confirm_password.value.trim(),
+                        city: select_city.value,
+                        street: select_street.value,
+                        houseNumber: houseNumberValue,
+                        paymentMethod,
+                    }),
+                });
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || "Registration failed");
+                }
+                register_error.textContent = "Registration was succesful!";
+                register_error.style.color = "green";
+            }
+            catch (error) {
+                let errorMessage = "Registration failed";
+                if (error instanceof Error) {
+                    errorMessage = error.message;
+                }
+                else if (typeof error === "object" &&
+                    error !== null &&
+                    "message" in error) {
+                    errorMessage = error.message;
+                }
+                register_error.textContent = errorMessage;
+                register_error.style.color = "red";
+            }
+            finally {
+                register.classList.remove("loading");
+                register.textContent = "Register";
+            }
+        });
+    }
+});
+document.addEventListener("DOMContentLoaded", () => {
+    const cart = JSON.parse(localStorage.getItem("cart") ?? "[]");
+    const storedCurrentProducts = localStorage.getItem("current_products");
+    if (storedCurrentProducts) {
+        current_products.splice(0, current_products.length, ...JSON.parse(storedCurrentProducts));
+    }
+    if (cart.length > 0) {
+        cart_button.style.display = "inline";
+        const cart_number = document.querySelector(".cart_number");
+        cart_number.textContent = cart.length.toString();
+    }
+    getFavorites(); //initial
+});
 export {};
 //# sourceMappingURL=script.js.map
