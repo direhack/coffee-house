@@ -299,6 +299,7 @@ async function getProduct(id: string): Promise<Product | null> {
 	} catch (error) {
 		backdrop.removeChild(loader);
 		backdrop.style.display = "none";
+		document.body.classList.remove("modal-open");
 		console.log("Error fetching data:", error);
 		alert("Something went wrong. Please, try again");
 		return null;
@@ -674,9 +675,26 @@ menu_link.addEventListener("click", async (e: Event) => {
 
 				current_product.index = i;
 
+				console.log(product);
 				createSizes();
 				createAdditives();
-				total_price.textContent = product.price ? `$${product.price}` : "";
+
+				// if (isLoggedIn()) {
+				// 	total_price.textContent = product.discountPrice
+				// 		? `$${product.discountPrice}`
+				// 		: `$${product.sizes.s.price}`;
+				// } else {
+
+				if (isLoggedIn() && product.sizes.s.discountPrice !== undefined) {
+					total_price.textContent = product.discountPrice
+						? `$${product.discountPrice}`
+						: `$${product.sizes.s.discountPrice}`;
+				} else {
+					total_price.textContent = product.price ? `$${product.price}` : "";
+				}
+
+				// }
+
 				current_product.totalPrice = parseFloat(product.price);
 				current_product.productSize = product.sizes[current_product.size].size;
 				// } catch (error) {
