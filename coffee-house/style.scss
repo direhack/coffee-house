@@ -833,8 +833,9 @@ a {
 			}
 			.info_block {
 				margin-left: 20px;
-				display: flex;
-				flex-direction: column;
+				// display: flex;
+				// flex-wrap: wrap;
+				// flex-direction: column;
 				h3 {
 					@include heading-3;
 					color: $dark_text;
@@ -843,9 +844,17 @@ a {
 					@include medium;
 					color: $dark_text;
 				}
+				.prices_block {
+					display: flex;
+				}
 				.price {
 					@include heading-3;
 					color: $dark_text;
+				}
+				.discount_price {
+					@include heading-3;
+					color: $dark_text;
+					margin-right: 10px;
 				}
 			}
 		}
@@ -853,6 +862,7 @@ a {
 }
 
 .cart {
+	margin-bottom: 100px;
 	h1 {
 		color: $dark_text;
 		@include heading-1;
@@ -909,6 +919,11 @@ a {
 			}
 			.product_price {
 				color: $dark_text;
+				// font-weight: bold;
+			}
+			.prices_block {
+				display: flex;
+				gap: 20px;
 				font-weight: bold;
 			}
 		}
@@ -923,8 +938,14 @@ a {
 			color: $dark_text;
 		}
 		.cart_price {
+			display: flex;
+			gap: 20px;
 			font-weight: bold;
 			color: $dark_text;
+			.total_original_price {
+				text-decoration: line-through;
+				opacity: 0.5;
+			}
 		}
 	}
 	.cart_buttons {
@@ -980,8 +1001,8 @@ a {
 		font-weight: bold;
 		width: 200px;
 		height: 44px;
-		margin-top: 50px;
-		margin-bottom: 100px;
+		// margin-top: 50px;
+		// margin-bottom: 100px;
 		&:hover {
 			color: #e1d4c9;
 			background-color: #665f55;
@@ -1361,6 +1382,10 @@ a {
 						}
 					}
 				}
+				&:hover .tooltip {
+					opacity: 1;
+					visibility: visible;
+				}
 			}
 			.s,
 			.m,
@@ -1433,6 +1458,10 @@ a {
 						.additive_three {
 							background-color: $light_text;
 						}
+						.tooltip {
+							opacity: 1;
+							visibility: visible;
+						}
 					}
 				}
 			}
@@ -1483,6 +1512,33 @@ a {
 			margin-right: 20px;
 			@media (max-width: 600px) {
 				margin-left: 10px;
+			}
+		}
+		.tooltip {
+			position: absolute;
+			background-color: #333;
+			color: #fff;
+			padding: 8px 12px;
+			border-radius: 4px;
+			font-size: 14px;
+			z-index: 1000;
+			white-space: nowrap;
+			opacity: 0;
+			visibility: hidden;
+			transition: opacity 0.2s ease, visibility 0.2s ease;
+			top: -40px; /* Position above the element */
+			left: 50%;
+			transform: translateX(-50%);
+			pointer-events: none; /* Prevent tooltip from interfering with clicks */
+			&::after {
+				content: "";
+				position: absolute;
+				bottom: -5px;
+				left: 50%;
+				transform: translateX(-50%);
+				border-width: 5px;
+				border-style: solid;
+				border-color: #333 transparent transparent transparent; /* Arrow pointing down */
 			}
 		}
 	}
@@ -1609,7 +1665,7 @@ a {
 	margin-top: 50px;
 	margin-bottom: 100px;
 }
-К .hidden {
+.hidden {
 	display: none !important;
 }
 
