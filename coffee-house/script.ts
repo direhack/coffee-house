@@ -343,7 +343,9 @@ function changeActive(): void {
 	if (lines.length < 3) return;
 	lines.forEach((sel) => {
 		const el = document.querySelector(sel);
-		if (el) el.classList.remove("active");
+		if (el) {
+			el.classList.remove("active", "paused", "resume");
+		}
 	});
 	const activeLine = document.querySelector(lines[current] as string);
 	if (activeLine) activeLine.classList.add("active");
