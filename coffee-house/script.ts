@@ -117,7 +117,7 @@ interface CurrentProduct {
 	adds: number[];
 	totalPrice: number;
 	addsTypes: string[];
-	size: keyof (typeof data)[0]["sizes"];
+	size: SizeKey;
 	productSize: string;
 	index: number;
 	id: string;
@@ -571,27 +571,32 @@ menu_link.addEventListener("click", async (e: Event) => {
 			const info_block = document.createElement("div");
 			const price = document.createElement("p");
 			const discountPrice = document.createElement("p");
+			const prices_block = document.createElement("div");
 
 			block.classList.add("block");
 			info_block.classList.add("info_block");
 			price.classList.add("price");
 			discountPrice.classList.add("discount_price");
+			prices_block.classList.add("prices_block");
 
 			name.textContent = item.name;
 			description.textContent = item.description;
 			price.textContent = `$${item.price}`;
-			discountPrice.textContent = `${item.discountPrice}`;
+			discountPrice.textContent = `$${item.discountPrice}`;
 			img.src = sources[i] as string;
 			img.alt = `${category}-${i}`;
 
 			block.appendChild(img);
 			info_block.appendChild(name);
 			info_block.appendChild(description);
-			info_block.appendChild(price);
-			if (localStorage.getItem("jwt")) {
+			info_block.appendChild(prices_block);
+
+			if (isLoggedIn() && item.discountPrice !== null) {
 				price.style.textDecoration = "line-through";
-				info_block.appendChild(discountPrice);
+				price.style.opacity = "0.5";
+				prices_block.appendChild(discountPrice);
 			}
+			prices_block.appendChild(price);
 			block.appendChild(info_block);
 
 			content.appendChild(block);
@@ -716,11 +721,22 @@ menu_link.addEventListener("click", async (e: Event) => {
 			const div = document.createElement("div");
 			const p1 = document.createElement("p");
 			const p2 = document.createElement("p");
+			const tooltip = document.createElement("div");
+
 			div.className = divs[i] ?? "";
 			p1.className = p1s[i] ?? "";
 			p2.classList = p2s[i] ?? "";
 			p1.textContent = (i + 1).toString();
 			p2.textContent = additive.name;
+			tooltip.className = "tooltip";
+
+			if (isLoggedIn() && additive.discountPrice !== undefined) {
+				tooltip.innerHTML = `<s>$${parseFloat(additive.price).toFixed(
+					2
+				)}</s> $${parseFloat(additive.discountPrice).toFixed(2)}`;
+			} else {
+				tooltip.innerHTML = `$${parseFloat(additive.price).toFixed(2)}`;
+			}
 
 			div.addEventListener("click", () => {
 				div.classList.toggle("modal_button_active");
@@ -733,6 +749,7 @@ menu_link.addEventListener("click", async (e: Event) => {
 
 			div.appendChild(p1);
 			div.appendChild(p2);
+			div.appendChild(tooltip);
 			additives_block.appendChild(div);
 		});
 	};
@@ -757,6 +774,7 @@ menu_link.addEventListener("click", async (e: Event) => {
 			const div = document.createElement("div");
 			const p1 = document.createElement("p");
 			const p2 = document.createElement("p");
+			const tooltip = document.createElement("div");
 
 			div.className = divs[key] ?? "";
 
@@ -766,8 +784,19 @@ menu_link.addEventListener("click", async (e: Event) => {
 			p1.className = key;
 			p2.className = `size_${key}`;
 
+			tooltip.className = "tooltip";
+
+			if (isLoggedIn() && size.discountPrice !== undefined) {
+				tooltip.innerHTML = `<s>$${parseFloat(size.price).toFixed(
+					2
+				)}</s> $${parseFloat(size.discountPrice).toFixed(2)}`;
+			} else {
+				tooltip.innerHTML = `$${parseFloat(size.price).toFixed(2)}`;
+			}
+
 			div.appendChild(p1);
 			div.appendChild(p2);
+			div.appendChild(tooltip);
 			sizes_block.appendChild(div);
 
 			sizeDivs.push(div);
@@ -943,12 +972,21 @@ const updateTotal = (): void => {
 	// const base = parseFloat(product?.price ?? "0");
 
 	const sizeAdd = parseFloat(
-		product?.sizes?.[current_product.size]?.["price"] ?? "0"
+		isLoggedIn() &&
+			product?.sizes?.[current_product.size]?.["discountPrice"] !== undefined
+			? product?.sizes?.[current_product.size]?.["discountPrice"]
+			: product?.sizes?.[current_product.size]?.["price"] ?? "0"
 	);
 	// console.log(sizeAdd);
 
 	const addsSum = current_product.adds.reduce(
-		(s, i) => s + parseFloat(product?.additives?.[i]?.["price"] ?? "0"),
+		(s, i) =>
+			s +
+			parseFloat(
+				isLoggedIn() && product?.additives?.[i]?.["discountPrice"] !== undefined
+					? product?.additives?.[i]?.["discountPrice"]
+					: product?.additives?.[i]?.["price"] ?? "0"
+			), // <----------------------
 		0
 	);
 
@@ -1115,9 +1153,13 @@ const updateCartNumber = (): void => {
 const updateCart = (): void => {
 	const cart_products = document.querySelector(".cart_products") as HTMLElement;
 	const cart_total_price = document.querySelector(".cart_price") as HTMLElement;
+	const confirm_order = document.querySelector(
+		".confirm_order"
+	) as HTMLElement | null;
 	cart_products.innerHTML = "";
 	const cart = localStorage.getItem("cart");
 	let totalCartPrice = 0;
+	let totalCartOriginalPrice = 0;
 
 	if (cart) {
 		const cartProducts: Product[] = JSON.parse(cart);
@@ -1129,12 +1171,19 @@ const updateCart = (): void => {
 			const img: HTMLImageElement = document.createElement("img");
 			const product_name: HTMLElement = document.createElement("p");
 			const product_price: HTMLElement = document.createElement("p");
+			const prices_block: HTMLElement = document.createElement("div");
+			const original_price: HTMLElement = document.createElement("p");
+			const discount_price: HTMLElement = document.createElement("p");
 
 			trash.classList.add("fa-solid", "fa-trash");
 			productInfo.className = "product_info";
 			productRow.className = "product_row";
 			product_name.className = "product_name";
 			product_price.className = "product_price";
+			prices_block.className = "prices_block";
+			original_price.className = "original_price";
+			discount_price.className = "discount_price";
+
 			img.src =
 				product.category === "coffee"
 					? `images/${product.id}.jpg `
@@ -1144,17 +1193,71 @@ const updateCart = (): void => {
 
 			product_name.textContent = product.name;
 
-			const productCustomization = current_products[i] || {
-				productSize: "N/A",
-				addsTypes: [],
+			const productCustomization: CurrentProduct = current_products[i] || {
+				adds: [],
 				totalPrice: parseFloat(product.price || "0"),
+				addsTypes: [],
+				size: "s",
+				productSize: product.sizes?.s?.size || "Small",
+				index: i,
+				id: product.id.toString(),
+				type: product.category,
 			};
 
-			product_price.textContent = `$${productCustomization.totalPrice.toFixed(
-				2
-			)}`;
+			// Calculate original and discounted prices for the product
+			const sizeOriginalPrice = parseFloat(
+				product.sizes[productCustomization.size].price || "0"
+			);
+			const sizeDiscountPrice = isLoggedIn()
+				? parseFloat(
+						product.sizes[productCustomization.size]?.discountPrice ||
+							product.sizes[productCustomization.size]?.price ||
+							"0"
+				  )
+				: sizeOriginalPrice;
 
-			totalCartPrice += productCustomization.totalPrice;
+			const additivesOriginalPrice = productCustomization.adds.reduce(
+				(sum, addIndex) =>
+					sum + parseFloat(product.additives[addIndex]?.price || "0"),
+				0
+			);
+			const additivesDiscountPrice = isLoggedIn()
+				? productCustomization.adds.reduce(
+						(sum, addIndex) =>
+							sum +
+							parseFloat(
+								product.additives[addIndex]?.discountPrice ||
+									product.additives[addIndex]?.price ||
+									"0"
+							),
+						0
+				  )
+				: additivesOriginalPrice;
+
+			const productOriginalPrice = sizeOriginalPrice + additivesOriginalPrice;
+			const productDiscountPrice = sizeDiscountPrice + additivesDiscountPrice;
+
+			totalCartOriginalPrice += productOriginalPrice;
+			totalCartPrice += productDiscountPrice;
+
+			// Display prices
+			original_price.textContent = `$${productOriginalPrice.toFixed(2)}`;
+			discount_price.textContent = `$${productDiscountPrice.toFixed(2)}`;
+
+			if (isLoggedIn() && productDiscountPrice < productOriginalPrice) {
+				original_price.style.textDecoration = "line-through";
+				original_price.style.opacity = "0.5";
+				prices_block.appendChild(original_price);
+				prices_block.appendChild(discount_price);
+			} else {
+				prices_block.appendChild(discount_price); // Only show the original price if no discount
+			}
+
+			// product_price.textContent = `$${productCustomization.totalPrice.toFixed(
+			// 	2
+			// )}`;
+
+			// totalCartPrice += productCustomization.totalPrice;
 
 			// console.log(current_product);
 
@@ -1226,12 +1329,42 @@ const updateCart = (): void => {
 			productInfo.appendChild(product_info_div);
 
 			productRow.appendChild(productInfo);
-			productRow.appendChild(product_price);
+			productRow.appendChild(prices_block);
+			// productRow.appendChild(product_price);
 
 			cart_products?.appendChild(productRow);
 		});
 
-		cart_total_price.textContent = `$${totalCartPrice.toFixed(2)}`;
+		// cart_total_price.textContent = `$${totalCartPrice.toFixed(2)}`;
+		// Update total price display
+		if (isLoggedIn() && totalCartPrice < totalCartOriginalPrice) {
+			cart_total_price.innerHTML = `<p class="total_original_price">$${totalCartOriginalPrice.toFixed(
+				2
+			)}</p> <p>$${totalCartPrice.toFixed(2)}</p>`;
+		} else {
+			cart_total_price.textContent = `$${totalCartPrice.toFixed(2)}`;
+		}
+
+		if (cartProducts.length > 0 && isLoggedIn()) {
+			if (!confirm_order) {
+				// Create Confirm button if it doesn't exist
+				const newConfirmOrder = document.createElement("div");
+				newConfirmOrder.textContent = "Confirm";
+				newConfirmOrder.className = "confirm_order";
+				main.appendChild(newConfirmOrder);
+			}
+		} else {
+			// Remove Confirm button if it exists
+			if (confirm_order) {
+				confirm_order.remove();
+			}
+		}
+	} else {
+		// Cart is empty, remove Confirm button if it exists
+		if (confirm_order) {
+			confirm_order.remove();
+		}
+		// cart_total_price.textContent = "$0.00";
 	}
 	updateCartButtonVisibility();
 };
@@ -1339,9 +1472,9 @@ cart_button.addEventListener("click", async () => {
 		div3.className = "address";
 		div4.className = "pay_by";
 
-		const confirm_order = document.createElement("div");
-		confirm_order.textContent = "Confirm";
-		confirm_order.className = "confirm_order";
+		// const confirm_order = document.createElement("div");
+		// confirm_order.textContent = "Confirm";
+		// confirm_order.className = "confirm_order";
 
 		div3.appendChild(p3);
 		div3.appendChild(p4);
@@ -1350,8 +1483,6 @@ cart_button.addEventListener("click", async () => {
 
 		main.appendChild(div3);
 		main.appendChild(div4);
-
-		main.appendChild(confirm_order);
 	} else {
 		buttons.appendChild(sign_in);
 		buttons.appendChild(registration);
