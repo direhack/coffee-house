@@ -45,17 +45,65 @@ const total_price = document.querySelector(
 	".modal .total_price"
 ) as HTMLElement;
 
+enum ProductCategory {
+	COFFEE = "coffee",
+	TEA = "tea",
+	DESSERT = "dessert",
+}
+
 // 🥤 Media Sources (arrays of image URLs)
-const productImages: ProductImages = {
-	coffee: [],
-	tea: [],
-	dessert: [],
+const productImages: Record<ProductCategory, string[]> = {
+	[ProductCategory.COFFEE]: [],
+	[ProductCategory.TEA]: [],
+	[ProductCategory.DESSERT]: [],
 };
 const drinks: string[] = [];
 const drinks_names: string[] = [];
 const drinks_info: string[] = [];
 const drink_prices: string[] = [];
-const mainClasses: string[] = ["home", "menu", "cart", "login", "register"];
+
+enum PageView {
+	HOME = "home",
+	MENU = "menu",
+	CART = "cart",
+	LOGIN = "login",
+	REGISTER = "register",
+}
+
+enum SizeKey {
+	SMALL = "s",
+	MEDIUM = "m",
+	LARGE = "l",
+	EXTRA_LARGE = "xl",
+	EXTRA_EXTRA_LARGE = "xxl",
+}
+
+enum AdditiveIndex {
+	FIRST = 0,
+	SECOND = 1,
+	THIRD = 2,
+}
+
+enum SlideDirection {
+	LEFT = "left",
+	RIGHT = "right",
+}
+
+enum lineState {
+	ACTIVE = "active",
+	PAUSED = "paused",
+	RESUME = "resume",
+}
+
+enum DisplayState {
+	SHOW = "flex",
+	HIDE = "none",
+}
+
+enum LoaderText {
+	LOADING = "Loading...",
+	ERROR = "Something went wrong. Please, refresh the page",
+}
 
 // ⚙️ State and Data Variables
 let current: number = 0; // current index for slideshow
@@ -75,26 +123,56 @@ let productsExpanded: boolean = false;
 let isTransitioning: boolean = false;
 let isOpen: boolean = false;
 
-// 🛒 Current Product Info
+interface ApiResponse<T> {
+	success: boolean;
+	data: T;
+	message?: string;
+}
+
+interface Size {
+	size: string;
+	price: string;
+	discountPrice: string;
+}
+
+interface Additive {
+	name: string;
+	price: string;
+	discountPrice: string;
+}
+
+interface Product {
+	id: number;
+	name: string;
+	description: string;
+	price: string;
+	discountPrice: string;
+	category: ProductCategory;
+	sizes: Record<SizeKey, Size>;
+	additives: Additive[];
+}
+
 interface CurrentProduct {
-	adds: number[];
+	adds: AdditiveIndex[];
 	totalPrice: number;
 	addsTypes: string[];
 	size: SizeKey;
 	productSize: string;
 	index: number;
 	id: string;
-	type: string;
+	type: ProductCategory;
+	quantity: number;
 }
 let current_product: CurrentProduct = {
 	adds: [],
 	totalPrice: 0,
 	addsTypes: [],
-	size: "s",
+	size: SizeKey.SMALL,
 	productSize: "",
 	index: 0,
 	id: "1",
-	type: "coffee",
+	type: ProductCategory.COFFEE,
+	quantity: 1,
 };
 
 const current_products: CurrentProduct[] = [];
@@ -107,72 +185,36 @@ let timer: number | null = null;
 let startedAt: number = 0;
 let remaining: number = INTERVAL;
 
-// Utility function to check if we are on the home page (based on main's class)
-const isHome = (): boolean => main.classList.contains("home");
+// Utility functions
+const isHome = (): boolean => main.classList.contains(PageView.HOME);
+const isLoggedIn = (): boolean => localStorage.getItem("jwt") !== null;
 
 // Backup of the original main children nodes (to reset DOM if needed)
 const backup: ChildNode[] = Array.from(main.childNodes);
 
-// Types
-type SizeKey = "s" | "m" | "l" | "xl" | "xxl";
-
-type Size = {
-	size: string;
-	price: string;
-	discountPrice: string;
-};
-
-type Additive = {
-	name: string;
-	price: string;
-	discountPrice: string;
-};
-
-type Product = {
-	id: number;
-	name: string;
-	description: string;
-	price: string;
-	discountPrice: string;
-	category: string;
-	sizes: Record<SizeKey, Size>;
-	additives: Additive[]; // do i need to change here
-};
-
-type ProductImages = {
-	coffee: string[];
-	tea: string[];
-	dessert: string[];
-};
-
-type Products = {
-	id: number;
-	name: string;
-	description: string;
-	price: string;
-	discountPrice: string;
-	category: "coffee" | "tea" | "dessert";
-};
+// 🛒 GENERIC API FETCHER
+async function apiFetch<T>(endpoint: string): Promise<ApiResponse<T>> {
+	const response = await fetch(endpoint);
+	if (!response.ok) {
+		throw new Error(`API Error: ${response.statusText}`);
+	}
+	return response.json();
+}
 
 // API REQUESTS
 
 async function getFavorites(): Promise<void> {
 	try {
-		loader.style.display = "block";
-		slider.style.display = "none";
-		three_lines.style.display = "none";
-		const response = await fetch(
+		loader.style.display = DisplayState.SHOW;
+		slider.style.display = DisplayState.HIDE;
+		three_lines.style.display = DisplayState.HIDE;
+		const result = await apiFetch<Product[]>(
 			"https://6kt29kkeub.execute-api.eu-central-1.amazonaws.com/products/favorites"
 		);
-		if (!response.ok) {
-			loader.textContent = "Something went wrong. Please, refresh the page";
-			throw new Error("Network response was not ok");
-		}
-		const result = await response.json();
 		dataFavorites = result.data;
-		loader.style.display = "none";
-		slider.style.display = "flex";
-		three_lines.style.display = "flex";
+		loader.style.display = DisplayState.HIDE;
+		slider.style.display = DisplayState.SHOW;
+		three_lines.style.display = DisplayState.SHOW;
 		drinks.push(
 			...dataFavorites.map((product) => `images/slider_${product.id}.png`)
 		);
@@ -182,44 +224,49 @@ async function getFavorites(): Promise<void> {
 		render();
 	} catch (error) {
 		console.log("Error fetching data:", error);
+		loader.textContent = LoaderText.ERROR;
 	}
 }
 
 async function getProducts(): Promise<boolean> {
 	const loader = document.createElement("div");
 	loader.className = "second-loader";
-	loader.textContent = "Loading...";
+	loader.textContent = LoaderText.LOADING;
 	main.appendChild(loader);
 	console.log("[getProducts] Starting fetch");
 	try {
-		const response = await fetch(
+		const result = await apiFetch<Product[]>(
 			"https://6kt29kkeub.execute-api.eu-central-1.amazonaws.com/products"
 		);
-		console.log("[getProducts] Response received", response);
-		if (!response.ok) {
-			console.log("[getProducts] Response NOT OK");
-			throw new Error("Network response was no ok");
-		}
-		const result = await response.json();
-		console.log("[getProducts] Data received", result);
+		// console.log("[getProducts] Response received", response);
+		// if (!response.ok) {
+		// 	console.log("[getProducts] Response NOT OK");
+		// 	throw new Error("Network response was no ok");
+		// }
 		fullData = result.data;
 		data = result.data;
-		const products: Products[] = result.data;
+		// const products: Products[] = result.data;
 
-		for (const product of products) {
-			const ext = product.category === "coffee" ? "jpg" : "png";
+		result.data.forEach((product) => {
+			const ext = product.category === ProductCategory.COFFEE ? "jpg" : "png";
 			const imagePath = `images/${product.id}.${ext}`;
+			productImages[product.category].push(imagePath);
+		});
 
-			if (product.category in productImages) {
-				productImages[product.category].push(imagePath);
-			}
-		}
+		// for (const product of products) {
+		// 	const ext = product.category === "coffee" ? "jpg" : "png";
+		// 	const imagePath = `images/${product.id}.${ext}`;
+
+		// 	if (product.category in productImages) {
+		// 		productImages[product.category].push(imagePath);
+		// 	}
+		// }
 
 		return true;
 	} catch (error) {
-		console.log("[getProducts] Catch block hit:", error);
-		main.classList.remove(...mainClasses);
-		main.classList.add("menu");
+		// console.log("[getProducts] Catch block hit:", error);
+		main.classList.remove(...Object.values(PageView));
+		main.classList.add(PageView.MENU);
 
 		main.innerHTML = "";
 
@@ -236,7 +283,7 @@ async function getProducts(): Promise<boolean> {
 		console.log("Error fetching data:", error);
 		return false;
 	} finally {
-		console.log("[getProducts] Finally block");
+		// console.log("[getProducts] Finally block");
 		if (main.contains(loader)) {
 			main.removeChild(loader);
 		}
@@ -245,22 +292,18 @@ async function getProducts(): Promise<boolean> {
 
 async function getProduct(id: string): Promise<Product | null> {
 	const loader = document.createElement("div");
-	loader.textContent = "Loading...";
+	loader.textContent = LoaderText.LOADING;
 	loader.style.fontSize = "100px";
 	backdrop.appendChild(loader);
 	try {
-		const response = await fetch(
+		const result = await apiFetch<Product>(
 			`https://6kt29kkeub.execute-api.eu-central-1.amazonaws.com/products/${id}`
 		);
-		if (!response.ok) {
-			throw new Error("Network response was no ok");
-		}
-		const result = await response.json();
 		backdrop.removeChild(loader);
 		return result.data;
 	} catch (error) {
 		backdrop.removeChild(loader);
-		backdrop.style.display = "none";
+		backdrop.style.display = DisplayState.HIDE;
 		document.body.classList.remove("modal-open");
 		console.log("Error fetching data:", error);
 		alert("Something went wrong. Please, try again");
@@ -306,16 +349,16 @@ function changeActive(): void {
 	lines.forEach((sel) => {
 		const el = document.querySelector(sel);
 		if (el) {
-			el.classList.remove("active", "paused", "resume");
+			el.classList.remove(...Object.values(lineState));
 		}
 	});
 	const activeLine = document.querySelector(lines[current] as string);
-	if (activeLine) activeLine.classList.add("active");
+	if (activeLine) activeLine.classList.add(lineState.ACTIVE);
 }
 
 function changeCoffee(
 	isInterval: boolean,
-	direction: "left" | "right" = "left"
+	direction: SlideDirection = SlideDirection.LEFT
 ): void {
 	if (isInterval) {
 		current = current > 0 ? current - 1 : 2;
@@ -324,11 +367,11 @@ function changeCoffee(
 	playCycle(direction);
 }
 
-function playCycle(direction: "left" | "right" = "left"): void {
+function playCycle(direction: SlideDirection = SlideDirection.LEFT): void {
 	drink.style.animation = "none";
 	void drink.offsetWidth; // force reflow
 	const base = "slideInHoldOut 3000ms ease-in-out";
-	const dir = direction === "right" ? "reverse" : "normal";
+	const dir = direction === SlideDirection.RIGHT ? "reverse" : "normal";
 	drink.style.animation = `${base} ${dir} forwards`;
 }
 
@@ -347,7 +390,7 @@ function tick(): void {
 		schedule(INTERVAL);
 		return;
 	}
-	changeCoffee(true, "left");
+	changeCoffee(true, SlideDirection.LEFT);
 	remaining = INTERVAL;
 	schedule(INTERVAL);
 }
@@ -371,8 +414,8 @@ function pause(): void {
 		lines[current] as string
 	) as HTMLElement;
 	if (activeLine) {
-		activeLine.classList.remove("resume");
-		activeLine.classList.add("paused");
+		activeLine.classList.remove(lineState.RESUME);
+		activeLine.classList.add(lineState.PAUSED);
 	}
 }
 
@@ -383,15 +426,11 @@ function resume(): void {
 		lines[current] as string
 	) as HTMLElement;
 	if (activeLine) {
-		activeLine.classList.remove("paused");
-		activeLine.classList.add("resume");
+		activeLine.classList.remove(lineState.PAUSED);
+		activeLine.classList.add(lineState.RESUME);
 	}
 	schedule(remaining || INTERVAL);
 }
-
-const isLoggedIn = (): boolean => {
-	return localStorage.getItem("jwt") !== null;
-};
 
 // Initial schedule on next animation frames
 requestAnimationFrame(() => requestAnimationFrame(() => schedule(INTERVAL)));
@@ -410,7 +449,7 @@ drink.addEventListener("animationend", (e: AnimationEvent) => {
 left_button.addEventListener("click", () => {
 	pause();
 	current = current > 0 ? current - 1 : 2;
-	changeCoffee(false, "left");
+	changeCoffee(false, SlideDirection.LEFT);
 	remaining = INTERVAL;
 	resume();
 });
@@ -418,7 +457,7 @@ left_button.addEventListener("click", () => {
 right_button.addEventListener("click", () => {
 	pause();
 	current = current < 2 ? current + 1 : 0;
-	changeCoffee(false, "right");
+	changeCoffee(false, SlideDirection.RIGHT);
 	remaining = INTERVAL;
 	resume();
 });
@@ -452,7 +491,7 @@ button.addEventListener("click", () => menu_link.click());
 
 menu_link.addEventListener("click", async (e: Event) => {
 	const target = e.currentTarget as HTMLElement;
-	target.classList.add("disable_cursor");
+	target.classList.add("disable_cursor"); ///////////////////////////////////////////////
 
 	menu_link.style.borderBottom = "2px solid #403f3d";
 	cart_button.classList.remove("disable_cursor");
@@ -488,8 +527,8 @@ menu_link.addEventListener("click", async (e: Event) => {
 		</div>`;
 	load_more_button.innerHTML = `<i class="fa-solid fa-rotate-right"></i>`;
 
-	main.classList.remove(...mainClasses);
-	main.classList.add("menu");
+	main.classList.remove(...Object.values(PageView));
+	main.classList.add(PageView.MENU);
 	buttons.classList.add("buttons");
 	content.classList.add("content");
 	load_more_button.classList.add("load-button");
@@ -510,7 +549,7 @@ menu_link.addEventListener("click", async (e: Event) => {
 		activeButton.classList.add("disable_cursor");
 
 		content.innerHTML = "";
-		current_product.type = category;
+		current_product.type = category as ProductCategory;
 		filteredData = fullData.filter((el) => el.category === category);
 
 		console.log(fullData);
@@ -576,17 +615,17 @@ menu_link.addEventListener("click", async (e: Event) => {
 
 	// Coffee button
 	buttons.querySelector(".coffee")?.addEventListener("click", () => {
-		renderCategory("coffee");
+		renderCategory(ProductCategory.COFFEE);
 	});
 
 	// Tea button
 	buttons.querySelector(".tea")?.addEventListener("click", () => {
-		renderCategory("tea");
+		renderCategory(ProductCategory.TEA);
 	});
 
 	// Dessert button
 	buttons.querySelector(".dessert")?.addEventListener("click", () => {
-		renderCategory("dessert");
+		renderCategory(ProductCategory.DESSERT);
 	});
 
 	// Handling content change event
@@ -604,11 +643,12 @@ menu_link.addEventListener("click", async (e: Event) => {
 					adds: [],
 					totalPrice: 0,
 					addsTypes: [],
-					size: "s",
+					size: SizeKey.SMALL,
 					productSize: "",
 					index: i,
 					id: img.src.split("/").pop()?.split(".")[0] || "",
 					type: current_product.type, // Preserve the current category
+					quantity: 1,
 				};
 
 				modal_photo.src = img.src;
@@ -689,7 +729,7 @@ menu_link.addEventListener("click", async (e: Event) => {
 		});
 	};
 
-	const createSizes = () => {
+	const createSizes = (): void => {
 		const divs = {
 			s: "small",
 			m: "medium",
@@ -697,7 +737,13 @@ menu_link.addEventListener("click", async (e: Event) => {
 			xl: "extra_large",
 			xxl: "extra_extra_large",
 		};
-		const p1s: SizeKey[] = ["s", "m", "l", "xl", "xxl"];
+		const p1s: SizeKey[] = [
+			SizeKey.SMALL,
+			SizeKey.MEDIUM,
+			SizeKey.LARGE,
+			SizeKey.EXTRA_LARGE,
+			SizeKey.EXTRA_EXTRA_LARGE,
+		];
 
 		const sizeDivs: HTMLElement[] = [];
 
@@ -745,7 +791,7 @@ menu_link.addEventListener("click", async (e: Event) => {
 			});
 		});
 		sizeDivs[0]?.classList.add("modal_button_active");
-		current_product.size = "s";
+		current_product.size = SizeKey.SMALL;
 	};
 
 	const rotate_arrow =
@@ -806,8 +852,8 @@ links.forEach((link, i) => {
 
 			cart_button.style.borderBottom = "";
 			cart_button.classList.remove("disable_cursor");
-			main.classList.remove(...mainClasses);
-			main.classList.add("home");
+			main.classList.remove(...Object.values(PageView));
+			main.classList.add(PageView.HOME);
 			main.replaceChildren(...backup);
 			document.querySelector<HTMLVideoElement>("video")!.play();
 
@@ -828,8 +874,8 @@ burger_menu_links.forEach((link, i) => {
 			cart_button.style.borderBottom = "";
 			cart_button.classList.remove("disable_cursor");
 			updateCartButtonVisibility();
-			main.classList.remove(...mainClasses);
-			main.classList.add("home");
+			main.classList.remove(...Object.values(PageView));
+			main.classList.add(PageView.HOME);
 			main.replaceChildren(...backup);
 			document.querySelector<HTMLVideoElement>("video")!.play();
 
@@ -919,7 +965,7 @@ const updateTotal = (): void => {
 	current_product.totalPrice = total;
 };
 
-const additiveFilter = (num: number, additiveName: string): void => {
+const additiveFilter = (num: AdditiveIndex, additiveName: string): void => {
 	if (current_product.adds.includes(num)) {
 		current_product.adds = current_product.adds.filter(
 			(additive) => additive !== num
@@ -955,11 +1001,12 @@ close.addEventListener("click", () => {
 		adds: [],
 		totalPrice: 0,
 		addsTypes: [],
-		size: "s",
+		size: SizeKey.SMALL,
 		productSize: "",
 		index: 0,
 		id: "",
 		type: current_product.type,
+		quantity: 1,
 	};
 	current_product.adds = [];
 	product = null;
@@ -984,7 +1031,7 @@ const addToCart = (): void => {
 
 	if (product) {
 		cart.push(product);
-		current_products.push(JSON.parse(JSON.stringify(current_product)));
+		current_products.push({ ...current_product, quantity: 1 });
 		console.log(current_products);
 		localStorage.setItem("cart", JSON.stringify(cart));
 		localStorage.setItem("current_products", JSON.stringify(current_products));
@@ -999,21 +1046,15 @@ const addToCart = (): void => {
 
 const updateCartButtonVisibility = (): void => {
 	const cart = JSON.parse(localStorage.getItem("cart") ?? "[]");
-	if (isLoggedIn() || cart.length > 0) {
-		cart_button.style.display = "inline";
-	} else {
-		cart_button.style.display = "none";
-	}
+	cart_button.style.display =
+		isLoggedIn() || cart.length > 0 ? "inline" : "none";
 	updateCartNumber();
 };
 
 const updateCartNumber = (): void => {
 	const cart_number = document.querySelector(".cart_number") as HTMLElement;
 	count = parseInt(localStorage.getItem("cartCount") || "0");
-
-	if (cart_number) {
-		cart_number.textContent = count > 0 ? count.toString() : "";
-	}
+	cart_number.textContent = count > 0 ? count.toString() : "";
 };
 
 const updateCart = (): void => {
@@ -1051,7 +1092,7 @@ const updateCart = (): void => {
 			discount_price.className = "discount_price";
 
 			img.src =
-				product.category === "coffee"
+				product.category === ProductCategory.COFFEE
 					? `images/${product.id}.jpg `
 					: `images/${product.id}.png`;
 
@@ -1063,11 +1104,12 @@ const updateCart = (): void => {
 				adds: [],
 				totalPrice: parseFloat(product.price || "0"),
 				addsTypes: [],
-				size: "s",
+				size: SizeKey.SMALL,
 				productSize: product.sizes?.s?.size || "Small",
 				index: i,
 				id: product.id.toString(),
 				type: product.category,
+				quantity: 1,
 			};
 
 			// Calculate original and discounted prices for the product
@@ -1211,8 +1253,8 @@ const updateCart = (): void => {
 };
 
 cart_button.addEventListener("click", async () => {
-	main.classList.remove(...mainClasses);
-	main.classList.add("cart");
+	main.classList.remove(...Object.values(PageView));
+	main.classList.add(PageView.CART);
 	cart_button.classList.add("disable_cursor");
 	menu_link.classList.remove("disable_cursor");
 
@@ -1333,8 +1375,8 @@ document.addEventListener("click", (e: Event) => {
 	const target = e.target as HTMLElement;
 
 	if (target.classList.contains("sign_in")) {
-		main.classList.remove(...mainClasses);
-		main.classList.add("login");
+		main.classList.remove(...Object.values(PageView));
+		main.classList.add(PageView.LOGIN);
 
 		cart_button.style.borderBottom = "";
 		cart_button.classList.remove("disable_cursor");
@@ -1560,8 +1602,8 @@ document.addEventListener("click", (e: Event) => {
 			],
 		};
 
-		main.classList.remove(...mainClasses);
-		main.classList.add("register");
+		main.classList.remove(...Object.values(PageView));
+		main.classList.add(PageView.REGISTER);
 		cart_button.style.borderBottom = "";
 		cart_button.classList.remove("disable_cursor");
 		updateCartButtonVisibility();
