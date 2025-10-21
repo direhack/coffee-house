@@ -41,6 +41,11 @@ header {
 			&:hover {
 				cursor: pointer;
 			}
+			@include tablet {
+				position: absolute;
+				right: 70px;
+				top: 40px;
+			}
 		}
 	}
 	.burger {
