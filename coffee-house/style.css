@@ -39,6 +39,13 @@ header .menu_cart .cart_button {
 header .menu_cart .cart_button:hover {
   cursor: pointer;
 }
+@media only screen and (max-width: 768px) {
+  header .menu_cart .cart_button {
+    position: absolute;
+    right: 70px;
+    top: 40px;
+  }
+}
 header .burger {
   position: relative;
   width: 28px;
