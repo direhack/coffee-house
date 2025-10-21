@@ -238,14 +238,8 @@ async function getProducts(): Promise<boolean> {
 		const result = await apiFetch<Product[]>(
 			"https://6kt29kkeub.execute-api.eu-central-1.amazonaws.com/products"
 		);
-		// console.log("[getProducts] Response received", response);
-		// if (!response.ok) {
-		// 	console.log("[getProducts] Response NOT OK");
-		// 	throw new Error("Network response was no ok");
-		// }
 		fullData = result.data;
 		data = result.data;
-		// const products: Products[] = result.data;
 
 		result.data.forEach((product) => {
 			const ext = product.category === ProductCategory.COFFEE ? "jpg" : "png";
@@ -253,18 +247,8 @@ async function getProducts(): Promise<boolean> {
 			productImages[product.category].push(imagePath);
 		});
 
-		// for (const product of products) {
-		// 	const ext = product.category === "coffee" ? "jpg" : "png";
-		// 	const imagePath = `images/${product.id}.${ext}`;
-
-		// 	if (product.category in productImages) {
-		// 		productImages[product.category].push(imagePath);
-		// 	}
-		// }
-
 		return true;
 	} catch (error) {
-		// console.log("[getProducts] Catch block hit:", error);
 		main.classList.remove(...Object.values(PageView));
 		main.classList.add(PageView.MENU);
 
@@ -283,7 +267,6 @@ async function getProducts(): Promise<boolean> {
 		console.log("Error fetching data:", error);
 		return false;
 	} finally {
-		// console.log("[getProducts] Finally block");
 		if (main.contains(loader)) {
 			main.removeChild(loader);
 		}
@@ -491,7 +474,7 @@ button.addEventListener("click", () => menu_link.click());
 
 menu_link.addEventListener("click", async (e: Event) => {
 	const target = e.currentTarget as HTMLElement;
-	target.classList.add("disable_cursor"); ///////////////////////////////////////////////
+	target.classList.add("disable_cursor");
 
 	menu_link.style.borderBottom = "2px solid #403f3d";
 	cart_button.classList.remove("disable_cursor");
@@ -1246,7 +1229,6 @@ const updateCart = (): void => {
 		if (confirm_order) {
 			confirm_order.remove();
 		}
-		// cart_total_price.textContent = "$0.00";
 	}
 	cartTotalPrice = totalCartPrice;
 	updateCartButtonVisibility();
