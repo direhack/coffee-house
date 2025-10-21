@@ -14,7 +14,6 @@ const bars = document.querySelector(".fa-bars");
 const cross = document.querySelector(".fa-xmark");
 const burger_menu = document.querySelector(".burger-menu");
 const burger_menu_links = document.querySelectorAll(".burger_menu_link");
-// const content = document.querySelector(".content") as HTMLElement;
 const button = document.querySelector(".home button");
 const add_cart = document.querySelector(".add_cart");
 const close = document.querySelector(".close");
@@ -23,30 +22,11 @@ const modal = document.querySelector(".modal");
 const modal_photo = document.querySelector(".modal_photo");
 const modal_name = document.querySelector(".modal .name");
 const modal_description = document.querySelector(".modal .description");
-// Modal size selectors
-const S = document.querySelector(".modal .size_s");
-const M = document.querySelector(".modal .size_m");
-const L = document.querySelector(".modal .size_l");
-// Modal size buttons
-const button_S = document.querySelector(".modal .small");
-const button_M = document.querySelector(".modal .medium");
-const button_L = document.querySelector(".modal .large");
 const sizes_block = document.querySelector(".sizes_block");
-// Additives selectors
-const first_additive = document.querySelector(".modal .first_additive");
-const second_additive = document.querySelector(".modal .second_additive");
-const third_additive = document.querySelector(".modal .third_additive");
-// Additives buttons
-const button_first_additive = document.querySelector(".modal .first");
-const button_second_additive = document.querySelector(".modal .second");
-const button_third_additive = document.querySelector(".modal .third");
 const additives_block = document.querySelector(".additives_block");
 // Other modal elements
 const total_price = document.querySelector(".modal .total_price");
 // 🥤 Media Sources (arrays of image URLs)
-// const coffee_src: string[] = [];
-// const tea_src: string[] = [];
-// const dessert_src: string[] = [];
 const productImages = {
     coffee: [],
     tea: [],
@@ -62,6 +42,7 @@ let current = 0; // current index for slideshow
 let startX = 0; // touch start X coordinate
 let endX = 0; // touch end X coordinate
 let count = 0;
+let cartTotalPrice = 0;
 let data = []; // fetched product data (type `any` for now)
 let fullData = [];
 let filteredData = [];
@@ -71,7 +52,6 @@ let blocks = []; // some collection of blocks in UI (usage not shown here)
 let productsExpanded = false;
 let isTransitioning = false;
 let isOpen = false;
-let imageName; // fot github pages to work I need to do like I did with pop()
 let current_product = {
     adds: [],
     totalPrice: 0,
@@ -144,7 +124,6 @@ async function getProducts() {
                 productImages[product.category].push(imagePath);
             }
         }
-        // console.log(productImages);
         return true;
     }
     catch (error) {
@@ -187,6 +166,7 @@ async function getProduct(id) {
     catch (error) {
         backdrop.removeChild(loader);
         backdrop.style.display = "none";
+        document.body.classList.remove("modal-open");
         console.log("Error fetching data:", error);
         alert("Something went wrong. Please, try again");
         return null;
@@ -226,8 +206,9 @@ function changeActive() {
         return;
     lines.forEach((sel) => {
         const el = document.querySelector(sel);
-        if (el)
-            el.classList.remove("active");
+        if (el) {
+            el.classList.remove("active", "paused", "resume");
+        }
     });
     const activeLine = document.querySelector(lines[current]);
     if (activeLine)
@@ -298,6 +279,9 @@ function resume() {
     }
     schedule(remaining || INTERVAL);
 }
+const isLoggedIn = () => {
+    return localStorage.getItem("jwt") !== null;
+};
 // Initial schedule on next animation frames
 requestAnimationFrame(() => requestAnimationFrame(() => schedule(INTERVAL)));
 drink.addEventListener("pointerenter", pause);
@@ -347,17 +331,10 @@ menu_link.addEventListener("click", async (e) => {
     const target = e.currentTarget;
     target.classList.add("disable_cursor");
     menu_link.style.borderBottom = "2px solid #403f3d";
-    // const cart = JSON.parse(localStorage.getItem("cart") ?? "[]");
-    // const storedCurrentProducts = localStorage.getItem("current_products");
-    // if (storedCurrentProducts?.length === 0) cart_button.style.display = "none";
     cart_button.classList.remove("disable_cursor");
     cart_button.style.borderBottom = "";
-    const cart = JSON.parse(localStorage.getItem("cart") ?? "[]");
-    if (cart.length === 0) {
-        cart_button.style.display = "none";
-    }
+    updateCartButtonVisibility();
     cross.click();
-    //
     if (data.length === 0) {
         const success = await getProducts();
         if (!success)
@@ -399,10 +376,10 @@ menu_link.addEventListener("click", async (e) => {
         buttonsEls.forEach((btn) => btn.classList.remove("disable_cursor"));
         const activeButton = buttons.querySelector(`.${category}`);
         activeButton.classList.add("disable_cursor");
-        // await getProducts(); // assuming this updates global `data`
         content.innerHTML = "";
         current_product.type = category;
         filteredData = fullData.filter((el) => el.category === category);
+        console.log(fullData);
         const srcMap = {
             coffee: productImages.coffee,
             tea: productImages.tea,
@@ -416,18 +393,29 @@ menu_link.addEventListener("click", async (e) => {
             const block = document.createElement("div");
             const info_block = document.createElement("div");
             const price = document.createElement("p");
+            const discountPrice = document.createElement("p");
+            const prices_block = document.createElement("div");
             block.classList.add("block");
             info_block.classList.add("info_block");
             price.classList.add("price");
+            discountPrice.classList.add("discount_price");
+            prices_block.classList.add("prices_block");
             name.textContent = item.name;
             description.textContent = item.description;
             price.textContent = `$${item.price}`;
+            discountPrice.textContent = `$${item.discountPrice}`;
             img.src = sources[i];
             img.alt = `${category}-${i}`;
             block.appendChild(img);
             info_block.appendChild(name);
             info_block.appendChild(description);
-            info_block.appendChild(price);
+            info_block.appendChild(prices_block);
+            if (isLoggedIn() && item.discountPrice !== null) {
+                price.style.textDecoration = "line-through";
+                price.style.opacity = "0.5";
+                prices_block.appendChild(discountPrice);
+            }
+            prices_block.appendChild(price);
             block.appendChild(info_block);
             content.appendChild(block);
         });
@@ -458,7 +446,6 @@ menu_link.addEventListener("click", async (e) => {
         blocks = Array.from(document.querySelectorAll(".block"));
         productsExpanded = false;
         handleResponsiveDisplay();
-        // getProducts();
         blocks.forEach((block, i) => {
             block.addEventListener("click", async () => {
                 const img = block.querySelector("img");
@@ -483,42 +470,24 @@ menu_link.addEventListener("click", async (e) => {
                 product = await getProduct(current_product.id);
                 if (!product) {
                     console.log("error");
-                    // backdrop.removeChild(loader);
                     return;
                 }
-                // backdrop.removeChild(loader);
-                // console.log(product);
                 modal.style.display = "flex";
                 modal_name.textContent = product.name;
                 modal_description.textContent = product.description;
-                // current_product.adds = [];
                 current_product.index = i;
                 createSizes();
                 createAdditives();
-                total_price.textContent = product.price ? `$${product.price}` : "";
+                if (isLoggedIn() && product.sizes.s.discountPrice !== undefined) {
+                    total_price.textContent = product.discountPrice
+                        ? `$${product.discountPrice}`
+                        : `$${product.sizes.s.discountPrice}`;
+                }
+                else {
+                    total_price.textContent = product.price ? `$${product.price}` : "";
+                }
                 current_product.totalPrice = parseFloat(product.price);
                 current_product.productSize = product.sizes[current_product.size].size;
-                // } catch (error) {
-                // 	const err = document.createElement("div");
-                // 	err.textContent = "Something went wrong. Please, refresh the page";
-                // 	err.style.fontSize = "100px";
-                // 	backdrop.appendChild(err);
-                // 	console.log(error);
-                // }
-                // document.body.classList.add("modal-open");
-                // backdrop.style.display = "block";
-                // Filter data based on image src
-                // if (modal_photo.src.includes("coffee")) {
-                // 	filteredData = fullData.filter((el) => el.category === "coffee");
-                // 	current_product.type = "coffee";
-                // } else if (modal_photo.src.includes("tea")) {
-                // 	filteredData = fullData.filter((el) => el.category === "tea");
-                // 	current_product.type = "tea";
-                // } else if (modal_photo.src.includes("dessert")) {
-                // 	filteredData = fullData.filter((el) => el.category === "dessert");
-                // 	current_product.type = "dessert";
-                // }
-                // Delete this ^ from my old project coffee house AND add some changes to THIS project, .adds = [] and modal_photo.src.split("/") etc
             });
         });
     });
@@ -533,20 +502,27 @@ menu_link.addEventListener("click", async (e) => {
             const div = document.createElement("div");
             const p1 = document.createElement("p");
             const p2 = document.createElement("p");
+            const tooltip = document.createElement("div");
             div.className = divs[i] ?? "";
             p1.className = p1s[i] ?? "";
             p2.classList = p2s[i] ?? "";
             p1.textContent = (i + 1).toString();
             p2.textContent = additive.name;
+            tooltip.className = "tooltip";
+            if (isLoggedIn() && additive.discountPrice !== undefined) {
+                tooltip.innerHTML = `<s>$${parseFloat(additive.price).toFixed(2)}</s> $${parseFloat(additive.discountPrice).toFixed(2)}`;
+            }
+            else {
+                tooltip.innerHTML = `$${parseFloat(additive.price).toFixed(2)}`;
+            }
             div.addEventListener("click", () => {
                 div.classList.toggle("modal_button_active");
-                // filter();
                 additiveFilter(i, additive.name);
-                // current_product.addsTypes.push(additive.name);
                 updateTotal();
             });
             div.appendChild(p1);
             div.appendChild(p2);
+            div.appendChild(tooltip);
             additives_block.appendChild(div);
         });
     };
@@ -568,13 +544,22 @@ menu_link.addEventListener("click", async (e) => {
             const div = document.createElement("div");
             const p1 = document.createElement("p");
             const p2 = document.createElement("p");
+            const tooltip = document.createElement("div");
             div.className = divs[key] ?? "";
             p1.textContent = key.toUpperCase() ?? "";
             p2.textContent = size.size;
             p1.className = key;
             p2.className = `size_${key}`;
+            tooltip.className = "tooltip";
+            if (isLoggedIn() && size.discountPrice !== undefined) {
+                tooltip.innerHTML = `<s>$${parseFloat(size.price).toFixed(2)}</s> $${parseFloat(size.discountPrice).toFixed(2)}`;
+            }
+            else {
+                tooltip.innerHTML = `$${parseFloat(size.price).toFixed(2)}`;
+            }
             div.appendChild(p1);
             div.appendChild(p2);
+            div.appendChild(tooltip);
             sizes_block.appendChild(div);
             sizeDivs.push(div);
             div.addEventListener("click", () => {
@@ -582,8 +567,6 @@ menu_link.addEventListener("click", async (e) => {
                 div.classList.add("modal_button_active");
                 current_product.size = key;
                 current_product.productSize = size.size;
-                console.log(current_product.productSize);
-                // filter();
                 updateTotal();
             });
         });
@@ -635,9 +618,7 @@ links.forEach((link, i) => {
                 cross.click();
             menu_link.style.borderBottom = "";
             menu_link.classList.remove("disable_cursor");
-            const cart = JSON.parse(localStorage.getItem("cart") ?? "[]");
-            if (cart.length === 0)
-                cart_button.style.display = "none";
+            updateCartButtonVisibility();
             cart_button.style.borderBottom = "";
             cart_button.classList.remove("disable_cursor");
             main.classList.remove(...mainClasses);
@@ -658,6 +639,9 @@ burger_menu_links.forEach((link, i) => {
         else if (i !== 3) {
             cross.click();
             menu_link.classList.remove("disable_cursor");
+            cart_button.style.borderBottom = "";
+            cart_button.classList.remove("disable_cursor");
+            updateCartButtonVisibility();
             main.classList.remove(...mainClasses);
             main.classList.add("home");
             main.replaceChildren(...backup);
@@ -717,68 +701,28 @@ function closeMenu() {
     burger_menu.addEventListener("transitionend", onEnd);
 }
 const updateTotal = () => {
-    // const item = filteredData[current_product.index];
-    // console.log(fullData);
-    // console.log(filteredData);
-    // const base = parseFloat(product?.price ?? "0");
-    const sizeAdd = parseFloat(product?.sizes?.[current_product.size]?.["price"] ?? "0");
-    // console.log(sizeAdd);
-    const addsSum = current_product.adds.reduce((s, i) => s + parseFloat(product?.additives?.[i]?.["price"] ?? "0"), 0);
-    // console.log(addsSum);
+    const sizeAdd = parseFloat(isLoggedIn() &&
+        product?.sizes?.[current_product.size]?.["discountPrice"] !== undefined
+        ? product?.sizes?.[current_product.size]?.["discountPrice"]
+        : product?.sizes?.[current_product.size]?.["price"] ?? "0");
+    const addsSum = current_product.adds.reduce((s, i) => s +
+        parseFloat(isLoggedIn() && product?.additives?.[i]?.["discountPrice"] !== undefined
+            ? product?.additives?.[i]?.["discountPrice"]
+            : product?.additives?.[i]?.["price"] ?? "0"), 0);
     const total = sizeAdd + addsSum;
     total_price.textContent = `$${total.toFixed(2)}`;
     current_product.totalPrice = total;
 };
-// const filter = (): void => {
-// 	if (current_product.type === "coffee")
-// 		filteredData = fullData.filter((el) => el.category === "coffee");
-// 	else if (current_product.type === "tea")
-// 		filteredData = fullData.filter((el) => el.category === "tea");
-// 	else if (current_product.type === "dessert")
-// 		filteredData = fullData.filter((el) => el.category === "dessert");
-// };
 const additiveFilter = (num, additiveName) => {
     if (current_product.adds.includes(num)) {
         current_product.adds = current_product.adds.filter((additive) => additive !== num);
         current_product.addsTypes = current_product.addsTypes.filter((additive) => additive !== additiveName);
-        // console.log(current_product.addsTypes);
     }
     else {
         current_product.adds.push(num);
         current_product.addsTypes.push(additiveName);
-        // console.log(current_product.addsTypes);
     }
 };
-// [button_S, button_M, button_L].forEach((btn) => {
-// 	btn.addEventListener("click", () => {
-// 		[button_S, button_M, button_L].forEach((b) => {
-// 			b.classList.remove("modal_button_active");
-// 		});
-// 		btn.classList.add("modal_button_active");
-// 	});
-// });
-// [button_first_additive, button_second_additive, button_third_additive].forEach(
-// 	(btn) => {
-// 		btn.addEventListener("click", () => {
-// 			btn.classList.toggle("modal_button_active");
-// 		});
-// 	}
-// );
-// button_first_additive.addEventListener("click", () => {
-// 	filter();
-// 	additiveFilter(0);
-// 	updateTotal();
-// });
-// button_second_additive.addEventListener("click", () => {
-// 	filter();
-// 	additiveFilter(1);
-// 	updateTotal();
-// });
-// button_third_additive.addEventListener("click", () => {
-// 	filter();
-// 	additiveFilter(2);
-// 	updateTotal();
-// });
 backdrop.addEventListener("click", () => close.click());
 close.addEventListener("click", () => {
     document.body.classList.remove("modal-open");
@@ -814,8 +758,6 @@ document.addEventListener("keydown", (e) => {
 });
 add_cart.addEventListener("click", () => {
     addToCart();
-    // cart_button.classList.remove("disable_cursor");
-    // cart_button.style.borderBottom = "";
 });
 const addToCart = () => {
     const stored = localStorage.getItem("cartCount");
@@ -829,19 +771,20 @@ const addToCart = () => {
         localStorage.setItem("cart", JSON.stringify(cart));
         localStorage.setItem("current_products", JSON.stringify(current_products));
     }
-    // } catch (error) {
-    // 	const err = document.createElement("div");
-    // 	err.textContent = "Something went wrong. Please, refresh the page";
-    // 	err.style.fontSize = "100px";
-    // 	backdrop.appendChild(err);
-    // 	console.log(error);
-    // }
     count++;
     localStorage.setItem("cartCount", count.toString());
-    // console.log(current_product.totalPrice);
-    updateCartNumber();
+    updateCartButtonVisibility();
     close.click();
-    cart_button.style.display = "inline";
+};
+const updateCartButtonVisibility = () => {
+    const cart = JSON.parse(localStorage.getItem("cart") ?? "[]");
+    if (isLoggedIn() || cart.length > 0) {
+        cart_button.style.display = "inline";
+    }
+    else {
+        cart_button.style.display = "none";
+    }
+    updateCartNumber();
 };
 const updateCartNumber = () => {
     const cart_number = document.querySelector(".cart_number");
@@ -853,9 +796,11 @@ const updateCartNumber = () => {
 const updateCart = () => {
     const cart_products = document.querySelector(".cart_products");
     const cart_total_price = document.querySelector(".cart_price");
+    const confirm_order = document.querySelector(".confirm_order");
     cart_products.innerHTML = "";
     const cart = localStorage.getItem("cart");
     let totalCartPrice = 0;
+    let totalCartOriginalPrice = 0;
     if (cart) {
         const cartProducts = JSON.parse(cart);
         cartProducts.forEach((product, i) => {
@@ -865,11 +810,17 @@ const updateCart = () => {
             const img = document.createElement("img");
             const product_name = document.createElement("p");
             const product_price = document.createElement("p");
+            const prices_block = document.createElement("div");
+            const original_price = document.createElement("p");
+            const discount_price = document.createElement("p");
             trash.classList.add("fa-solid", "fa-trash");
             productInfo.className = "product_info";
             productRow.className = "product_row";
             product_name.className = "product_name";
             product_price.className = "product_price";
+            prices_block.className = "prices_block";
+            original_price.className = "original_price";
+            discount_price.className = "discount_price";
             img.src =
                 product.category === "coffee"
                     ? `images/${product.id}.jpg `
@@ -877,13 +828,45 @@ const updateCart = () => {
             img.alt = `cart-product-${i}`;
             product_name.textContent = product.name;
             const productCustomization = current_products[i] || {
-                productSize: "N/A",
-                addsTypes: [],
+                adds: [],
                 totalPrice: parseFloat(product.price || "0"),
+                addsTypes: [],
+                size: "s",
+                productSize: product.sizes?.s?.size || "Small",
+                index: i,
+                id: product.id.toString(),
+                type: product.category,
             };
-            product_price.textContent = `$${productCustomization.totalPrice.toFixed(2)}`;
-            totalCartPrice += productCustomization.totalPrice;
-            // console.log(current_product);
+            // Calculate original and discounted prices for the product
+            const sizeOriginalPrice = parseFloat(product.sizes[productCustomization.size].price || "0");
+            const sizeDiscountPrice = isLoggedIn()
+                ? parseFloat(product.sizes[productCustomization.size]?.discountPrice ||
+                    product.sizes[productCustomization.size]?.price ||
+                    "0")
+                : sizeOriginalPrice;
+            const additivesOriginalPrice = productCustomization.adds.reduce((sum, addIndex) => sum + parseFloat(product.additives[addIndex]?.price || "0"), 0);
+            const additivesDiscountPrice = isLoggedIn()
+                ? productCustomization.adds.reduce((sum, addIndex) => sum +
+                    parseFloat(product.additives[addIndex]?.discountPrice ||
+                        product.additives[addIndex]?.price ||
+                        "0"), 0)
+                : additivesOriginalPrice;
+            const productOriginalPrice = sizeOriginalPrice + additivesOriginalPrice;
+            const productDiscountPrice = sizeDiscountPrice + additivesDiscountPrice;
+            totalCartOriginalPrice += productOriginalPrice;
+            totalCartPrice += productDiscountPrice;
+            // Display prices
+            original_price.textContent = `$${productOriginalPrice.toFixed(2)}`;
+            discount_price.textContent = `$${productDiscountPrice.toFixed(2)}`;
+            if (isLoggedIn() && productDiscountPrice < productOriginalPrice) {
+                original_price.style.textDecoration = "line-through";
+                original_price.style.opacity = "0.5";
+                prices_block.appendChild(original_price);
+                prices_block.appendChild(discount_price);
+            }
+            else {
+                prices_block.appendChild(discount_price); // Only show the original price if no discount
+            }
             trash.addEventListener("click", () => {
                 cartProducts.splice(i, 1);
                 current_products.splice(i, 1);
@@ -892,23 +875,8 @@ const updateCart = () => {
                 let count = parseInt(localStorage.getItem("cartCount") || "0");
                 count = Math.max(0, count - 1);
                 localStorage.setItem("cartCount", count.toString());
-                // const indexToRemove = cartProducts.findIndex(
-                // 	(p) => p.id === product.id
-                // );
-                // if (indexToRemove !== -1) {
-                // 	cartProducts.splice(indexToRemove, 1);
-                // 	// current_products.splice(i, 1)
-                // 	localStorage.setItem("cart", JSON.stringify(cartProducts));
-                // 	let count = parseInt(localStorage.getItem("cartCount") || "0");
-                // 	count = Math.max(0, count - 1);
-                // 	localStorage.setItem("cartCount", count.toString());
-                updateCartNumber();
+                updateCartButtonVisibility();
                 updateCart();
-                // }
-                // const updatedCart = cartProducts.filter((p) => p.id !== product.id);
-                // localStorage.setItem("cart", JSON.stringify(updatedCart));
-                // const newCount = updateCart.length;
-                // localStorage.setItem("cartCount", newCount.toString());
             });
             const product_info_div = document.createElement("div");
             product_info_div.className = "product_info_div";
@@ -936,19 +904,53 @@ const updateCart = () => {
             product_info_div.appendChild(product_type);
             productInfo.appendChild(product_info_div);
             productRow.appendChild(productInfo);
-            productRow.appendChild(product_price);
+            productRow.appendChild(prices_block);
             cart_products?.appendChild(productRow);
         });
-        cart_total_price.textContent = `$${totalCartPrice.toFixed(2)}`;
+        // Update total price display
+        if (isLoggedIn() && totalCartPrice < totalCartOriginalPrice) {
+            cart_total_price.innerHTML = `<p class="total_original_price">$${totalCartOriginalPrice.toFixed(2)}</p> <p>$${totalCartPrice.toFixed(2)}</p>`;
+        }
+        else {
+            cart_total_price.textContent = `$${totalCartPrice.toFixed(2)}`;
+        }
+        if (cartProducts.length > 0 && isLoggedIn()) {
+            if (!confirm_order) {
+                // Create Confirm button if it doesn't exist
+                const newConfirmOrder = document.createElement("div");
+                const orderConfirmResponse = document.createElement("p");
+                newConfirmOrder.textContent = "Confirm";
+                newConfirmOrder.className = "confirm_order";
+                orderConfirmResponse.className = "confirm_order_response";
+                main.appendChild(newConfirmOrder);
+                main.appendChild(orderConfirmResponse);
+            }
+        }
+        else {
+            // Remove Confirm button if it exists
+            if (confirm_order) {
+                confirm_order.remove();
+            }
+        }
     }
+    else {
+        // Cart is empty, remove Confirm button if it exists
+        if (confirm_order) {
+            confirm_order.remove();
+        }
+        // cart_total_price.textContent = "$0.00";
+    }
+    cartTotalPrice = totalCartPrice;
+    updateCartButtonVisibility();
 };
-cart_button.addEventListener("click", () => {
+cart_button.addEventListener("click", async () => {
     main.classList.remove(...mainClasses);
     main.classList.add("cart");
     cart_button.classList.add("disable_cursor");
     menu_link.classList.remove("disable_cursor");
     cart_button.style.borderBottom = "2px solid #403f3d";
     menu_link.style.borderBottom = "";
+    updateCartButtonVisibility();
     main.innerHTML = "";
     const h1 = document.createElement("h1");
     h1.textContent = "Cart";
@@ -976,9 +978,32 @@ cart_button.addEventListener("click", () => {
     main.appendChild(h1);
     main.appendChild(div2);
     main.appendChild(div);
-    if (localStorage.auth === "signed-in") {
-        // payment option
-        // address
+    if (isLoggedIn()) {
+        const jwtToken = localStorage.getItem("jwt");
+        try {
+            const response = await fetch("https://6kt29kkeub.execute-api.eu-central-1.amazonaws.com/auth/profile", {
+                method: "GET",
+                headers: {
+                    Authorization: `Bearer ${jwtToken}`,
+                    "Content-Type": "application/json",
+                },
+            });
+            if (!response.ok) {
+                const errorData = await response.json();
+                console.error("Profile fetch failed:", errorData.message || response.statusText);
+                if (response.status === 401) {
+                    localStorage.removeItem("jwt");
+                    updateCartButtonVisibility();
+                }
+                return;
+            }
+            const profileData = await response.json();
+            localStorage.setItem("userData", JSON.stringify(profileData.data));
+            console.log("Profile loaded:", profileData.data);
+        }
+        catch (error) {
+            console.log("Network error", error);
+        }
         const div3 = document.createElement("div");
         const div4 = document.createElement("div");
         const p3 = document.createElement("p");
@@ -986,21 +1011,21 @@ cart_button.addEventListener("click", () => {
         const p5 = document.createElement("p");
         const p6 = document.createElement("p");
         p3.textContent = "Address:";
-        p4.textContent = "localstorage";
         p5.textContent = "Pay by:";
-        p6.textContent = "localstorage";
+        const userData = localStorage.getItem("userData");
+        if (userData) {
+            const parsedData = JSON.parse(userData);
+            p4.textContent = `${parsedData.city}, ${parsedData.street}, ${parsedData.houseNumber}`;
+            p6.textContent = parsedData.paymentMethod;
+        }
         div3.className = "address";
         div4.className = "pay_by";
-        const confirm_order = document.createElement("div");
-        confirm_order.textContent = "Confirm";
-        confirm_order.className = "confirm_order";
         div3.appendChild(p3);
         div3.appendChild(p4);
         div4.appendChild(p5);
         div4.appendChild(p6);
         main.appendChild(div3);
         main.appendChild(div4);
-        main.appendChild(confirm_order);
     }
     else {
         buttons.appendChild(sign_in);
@@ -1016,6 +1041,7 @@ document.addEventListener("click", (e) => {
         main.classList.add("login");
         cart_button.style.borderBottom = "";
         cart_button.classList.remove("disable_cursor");
+        updateCartButtonVisibility();
         main.innerHTML = `
 			<h1>Sign In</h1>
 			<label class="label_login">
@@ -1062,9 +1088,6 @@ document.addEventListener("click", (e) => {
             input.style.border = "1px solid red";
             icon.style.display = "inline-block";
             error.textContent = message;
-            // input.setAttribute("aria-invalid", "true");
-            // input.setAttribute("aria-describedby", error.className);
-            // icon.setAttribute("aria-hidden", "true"); // Icon is decorative
         };
         const clearInputError = (input, error, icon) => {
             input.style.border = "";
@@ -1119,7 +1142,6 @@ document.addEventListener("click", (e) => {
             if (!isLoginValid || !isPasswordValid)
                 return;
             auth_error.textContent = "";
-            // sign_in.classList.add("loading");
             sign_in.textContent = "Signing In...";
             try {
                 const response = await fetch("https://6kt29kkeub.execute-api.eu-central-1.amazonaws.com/auth/login", {
@@ -1134,17 +1156,18 @@ document.addEventListener("click", (e) => {
                     const errorData = await response.json();
                     throw new Error(errorData.message || "Authentication failed");
                 }
-                // On success, redirect to Menu page
-                //localStorage.setItem();
-                localStorage.setItem("auth", "signed-in");
+                const data = await response.json();
+                const access_token = data.data.access_token;
+                localStorage.setItem("jwt", access_token);
+                updateCartButtonVisibility();
                 menu_link.click();
             }
             catch (error) {
+                console.log(error);
                 auth_error.textContent = "Incorrect login or password";
                 auth_error.style.color = "red";
             }
             finally {
-                // sign_in.classList.remove("loading");
                 sign_in.textContent = "Sign In";
             }
         });
@@ -1193,6 +1216,7 @@ document.addEventListener("click", (e) => {
         main.classList.add("register");
         cart_button.style.borderBottom = "";
         cart_button.classList.remove("disable_cursor");
+        updateCartButtonVisibility();
         main.innerHTML = `
 	<h1>Registration</h1>
 	<label class="label_login">
@@ -1260,7 +1284,6 @@ document.addEventListener("click", (e) => {
         const select_street = main.querySelector(".input_street");
         const input_house_number = main.querySelector(".input_house_number");
         const input_cash = main.querySelector('input[name="payment"][value="cash"]');
-        const input_card = main.querySelector('input[name="payment"][value="card"]');
         const login_error = main.querySelector(".login_error");
         const password_error = main.querySelector(".password_error");
         const confirm_password_error = main.querySelector(".confirm_password_error");
@@ -1483,7 +1506,6 @@ document.addEventListener("click", (e) => {
                 return;
             }
             register_error.textContent = "";
-            register.classList.add("loading");
             register.textContent = "Registering...";
             try {
                 const paymentMethod = input_cash.checked ? "cash" : "card";
@@ -1522,23 +1544,62 @@ document.addEventListener("click", (e) => {
                 register_error.style.color = "red";
             }
             finally {
-                register.classList.remove("loading");
                 register.textContent = "Register";
             }
         });
     }
+    else if (target.classList.contains("confirm_order")) {
+        const order_confirm_response = document.querySelector(".confirm_order_response");
+        const cart_total_products = {
+            items: [],
+            totalPrice: 0,
+        };
+        current_products.forEach((product) => {
+            cart_total_products.items.push({
+                productId: parseInt(product.id),
+                size: product.size,
+                additives: product.addsTypes,
+                quantity: 1,
+            });
+        });
+        cart_total_products.totalPrice = cartTotalPrice;
+        const postOrder = async () => {
+            try {
+                const response = await fetch("https://6kt29kkeub.execute-api.eu-central-1.amazonaws.com/orders/confirm", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(cart_total_products),
+                });
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || "Order failed");
+                }
+                order_confirm_response.textContent =
+                    "Thank you for your order! Our manager will contact you shortly.";
+            }
+            catch (error) {
+                let errorMessage = "Order failed";
+                if (error instanceof Error) {
+                    errorMessage = error.message;
+                }
+                else if (typeof error === "object" &&
+                    error !== null &&
+                    "message" in error) {
+                    errorMessage = error.message;
+                }
+                order_confirm_response.textContent = errorMessage;
+                order_confirm_response.style.color = "red";
+            }
+        };
+        postOrder();
+    }
 });
 document.addEventListener("DOMContentLoaded", () => {
-    const cart = JSON.parse(localStorage.getItem("cart") ?? "[]");
     const storedCurrentProducts = localStorage.getItem("current_products");
     if (storedCurrentProducts) {
         current_products.splice(0, current_products.length, ...JSON.parse(storedCurrentProducts));
     }
-    if (cart.length > 0) {
-        cart_button.style.display = "inline";
-        const cart_number = document.querySelector(".cart_number");
-        cart_number.textContent = cart.length.toString();
-    }
+    updateCartButtonVisibility();
     getFavorites(); //initial
 });
 export {};
