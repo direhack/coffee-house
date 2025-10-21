@@ -21,8 +21,6 @@ const burger_menu_links = document.querySelectorAll(
 	".burger_menu_link"
 ) as NodeListOf<HTMLElement>;
 
-// const content = document.querySelector(".content") as HTMLElement;
-
 const button = document.querySelector(".home button") as HTMLButtonElement;
 
 const add_cart = document.querySelector(".add_cart") as HTMLElement;
@@ -36,39 +34,7 @@ const modal_description = document.querySelector(
 	".modal .description"
 ) as HTMLElement;
 
-// Modal size selectors
-const S = document.querySelector(".modal .size_s") as HTMLElement;
-const M = document.querySelector(".modal .size_m") as HTMLElement;
-const L = document.querySelector(".modal .size_l") as HTMLElement;
-
-// Modal size buttons
-const button_S = document.querySelector(".modal .small") as HTMLButtonElement;
-const button_M = document.querySelector(".modal .medium") as HTMLButtonElement;
-const button_L = document.querySelector(".modal .large") as HTMLButtonElement;
-
 const sizes_block = document.querySelector(".sizes_block") as HTMLElement;
-
-// Additives selectors
-const first_additive = document.querySelector(
-	".modal .first_additive"
-) as HTMLElement;
-const second_additive = document.querySelector(
-	".modal .second_additive"
-) as HTMLElement;
-const third_additive = document.querySelector(
-	".modal .third_additive"
-) as HTMLElement;
-
-// Additives buttons
-const button_first_additive = document.querySelector(
-	".modal .first"
-) as HTMLButtonElement;
-const button_second_additive = document.querySelector(
-	".modal .second"
-) as HTMLButtonElement;
-const button_third_additive = document.querySelector(
-	".modal .third"
-) as HTMLButtonElement;
 
 const additives_block = document.querySelector(
 	".additives_block"
@@ -80,9 +46,6 @@ const total_price = document.querySelector(
 ) as HTMLElement;
 
 // 🥤 Media Sources (arrays of image URLs)
-// const coffee_src: string[] = [];
-// const tea_src: string[] = [];
-// const dessert_src: string[] = [];
 const productImages: ProductImages = {
 	coffee: [],
 	tea: [],
@@ -99,6 +62,7 @@ let current: number = 0; // current index for slideshow
 let startX: number = 0; // touch start X coordinate
 let endX: number = 0; // touch end X coordinate
 let count: number = 0;
+let cartTotalPrice: number = 0;
 
 let data: Product[] = []; // fetched product data (type `any` for now)
 let fullData: Product[] = [];
@@ -110,7 +74,6 @@ let blocks: HTMLElement[] = []; // some collection of blocks in UI (usage not sh
 let productsExpanded: boolean = false;
 let isTransitioning: boolean = false;
 let isOpen: boolean = false;
-let imageName: string; // fot github pages to work I need to do like I did with pop()
 
 // 🛒 Current Product Info
 interface CurrentProduct {
@@ -251,7 +214,6 @@ async function getProducts(): Promise<boolean> {
 				productImages[product.category].push(imagePath);
 			}
 		}
-		// console.log(productImages);
 
 		return true;
 	} catch (error) {
@@ -493,9 +455,6 @@ menu_link.addEventListener("click", async (e: Event) => {
 	target.classList.add("disable_cursor");
 
 	menu_link.style.borderBottom = "2px solid #403f3d";
-	// const cart = JSON.parse(localStorage.getItem("cart") ?? "[]");
-	// const storedCurrentProducts = localStorage.getItem("current_products");
-	// if (storedCurrentProducts?.length === 0) cart_button.style.display = "none";
 	cart_button.classList.remove("disable_cursor");
 	cart_button.style.borderBottom = "";
 	updateCartButtonVisibility();
@@ -549,8 +508,6 @@ menu_link.addEventListener("click", async (e: Event) => {
 
 		const activeButton = buttons.querySelector(`.${category}`) as HTMLElement;
 		activeButton.classList.add("disable_cursor");
-
-		// await getProducts(); // assuming this updates global `data`
 
 		content.innerHTML = "";
 		current_product.type = category;
@@ -637,7 +594,6 @@ menu_link.addEventListener("click", async (e: Event) => {
 		blocks = Array.from(document.querySelectorAll<HTMLElement>(".block"));
 		productsExpanded = false;
 		handleResponsiveDisplay();
-		// getProducts();
 
 		blocks.forEach((block, i) => {
 			block.addEventListener("click", async () => {
@@ -664,28 +620,16 @@ menu_link.addEventListener("click", async (e: Event) => {
 				product = await getProduct(current_product.id);
 				if (!product) {
 					console.log("error");
-					// backdrop.removeChild(loader);
 					return;
 				}
-				// backdrop.removeChild(loader);
-				// console.log(product);
 				modal.style.display = "flex";
 				modal_name.textContent = product.name;
 				modal_description.textContent = product.description;
 
-				// current_product.adds = [];
-
 				current_product.index = i;
 
-				console.log(product);
 				createSizes();
 				createAdditives();
-
-				// if (isLoggedIn()) {
-				// 	total_price.textContent = product.discountPrice
-				// 		? `$${product.discountPrice}`
-				// 		: `$${product.sizes.s.price}`;
-				// } else {
 
 				if (isLoggedIn() && product.sizes.s.discountPrice !== undefined) {
 					total_price.textContent = product.discountPrice
@@ -695,34 +639,8 @@ menu_link.addEventListener("click", async (e: Event) => {
 					total_price.textContent = product.price ? `$${product.price}` : "";
 				}
 
-				// }
-
 				current_product.totalPrice = parseFloat(product.price);
 				current_product.productSize = product.sizes[current_product.size].size;
-				// } catch (error) {
-				// 	const err = document.createElement("div");
-				// 	err.textContent = "Something went wrong. Please, refresh the page";
-				// 	err.style.fontSize = "100px";
-				// 	backdrop.appendChild(err);
-				// 	console.log(error);
-				// }
-
-				// document.body.classList.add("modal-open");
-				// backdrop.style.display = "block";
-
-				// Filter data based on image src
-				// if (modal_photo.src.includes("coffee")) {
-				// 	filteredData = fullData.filter((el) => el.category === "coffee");
-				// 	current_product.type = "coffee";
-				// } else if (modal_photo.src.includes("tea")) {
-				// 	filteredData = fullData.filter((el) => el.category === "tea");
-				// 	current_product.type = "tea";
-				// } else if (modal_photo.src.includes("dessert")) {
-				// 	filteredData = fullData.filter((el) => el.category === "dessert");
-				// 	current_product.type = "dessert";
-				// }
-
-				// Delete this ^ from my old project coffee house AND add some changes to THIS project, .adds = [] and modal_photo.src.split("/") etc
 			});
 		});
 	});
@@ -760,10 +678,7 @@ menu_link.addEventListener("click", async (e: Event) => {
 
 			div.addEventListener("click", () => {
 				div.classList.toggle("modal_button_active");
-				// filter();
 				additiveFilter(i, additive.name);
-
-				// current_product.addsTypes.push(additive.name);
 				updateTotal();
 			});
 
@@ -826,8 +741,6 @@ menu_link.addEventListener("click", async (e: Event) => {
 				div.classList.add("modal_button_active");
 				current_product.size = key;
 				current_product.productSize = size.size;
-				console.log(current_product.productSize);
-				// filter();
 				updateTotal();
 			});
 		});
@@ -888,10 +801,8 @@ links.forEach((link, i) => {
 			if (i === 0) cross.click();
 			menu_link.style.borderBottom = "";
 			menu_link.classList.remove("disable_cursor");
-			// const cart = JSON.parse(localStorage.getItem("cart") ?? "[]");
-			// if (cart.length === 0) cart_button.style.display = "none";
 
-			updateCartButtonVisibility(); // ?
+			updateCartButtonVisibility();
 
 			cart_button.style.borderBottom = "";
 			cart_button.classList.remove("disable_cursor");
@@ -986,19 +897,12 @@ function closeMenu(): void {
 }
 
 const updateTotal = (): void => {
-	// const item = filteredData[current_product.index];
-	// console.log(fullData);
-	// console.log(filteredData);
-	// const base = parseFloat(product?.price ?? "0");
-
 	const sizeAdd = parseFloat(
 		isLoggedIn() &&
 			product?.sizes?.[current_product.size]?.["discountPrice"] !== undefined
 			? product?.sizes?.[current_product.size]?.["discountPrice"]
 			: product?.sizes?.[current_product.size]?.["price"] ?? "0"
 	);
-	// console.log(sizeAdd);
-
 	const addsSum = current_product.adds.reduce(
 		(s, i) =>
 			s +
@@ -1006,27 +910,14 @@ const updateTotal = (): void => {
 				isLoggedIn() && product?.additives?.[i]?.["discountPrice"] !== undefined
 					? product?.additives?.[i]?.["discountPrice"]
 					: product?.additives?.[i]?.["price"] ?? "0"
-			), // <----------------------
+			),
 		0
 	);
 
-	// console.log(addsSum);
-
 	const total = sizeAdd + addsSum;
-
 	total_price.textContent = `$${total.toFixed(2)}`;
-
 	current_product.totalPrice = total;
 };
-
-// const filter = (): void => {
-// 	if (current_product.type === "coffee")
-// 		filteredData = fullData.filter((el) => el.category === "coffee");
-// 	else if (current_product.type === "tea")
-// 		filteredData = fullData.filter((el) => el.category === "tea");
-// 	else if (current_product.type === "dessert")
-// 		filteredData = fullData.filter((el) => el.category === "dessert");
-// };
 
 const additiveFilter = (num: number, additiveName: string): void => {
 	if (current_product.adds.includes(num)) {
@@ -1036,46 +927,11 @@ const additiveFilter = (num: number, additiveName: string): void => {
 		current_product.addsTypes = current_product.addsTypes.filter(
 			(additive) => additive !== additiveName
 		);
-		// console.log(current_product.addsTypes);
 	} else {
 		current_product.adds.push(num);
 		current_product.addsTypes.push(additiveName);
-		// console.log(current_product.addsTypes);
 	}
 };
-
-// [button_S, button_M, button_L].forEach((btn) => {
-// 	btn.addEventListener("click", () => {
-// 		[button_S, button_M, button_L].forEach((b) => {
-// 			b.classList.remove("modal_button_active");
-// 		});
-// 		btn.classList.add("modal_button_active");
-// 	});
-// });
-
-// [button_first_additive, button_second_additive, button_third_additive].forEach(
-// 	(btn) => {
-// 		btn.addEventListener("click", () => {
-// 			btn.classList.toggle("modal_button_active");
-// 		});
-// 	}
-// );
-
-// button_first_additive.addEventListener("click", () => {
-// 	filter();
-// 	additiveFilter(0);
-// 	updateTotal();
-// });
-// button_second_additive.addEventListener("click", () => {
-// 	filter();
-// 	additiveFilter(1);
-// 	updateTotal();
-// });
-// button_third_additive.addEventListener("click", () => {
-// 	filter();
-// 	additiveFilter(2);
-// 	updateTotal();
-// });
 
 backdrop.addEventListener("click", () => close.click());
 
@@ -1117,8 +973,6 @@ document.addEventListener("keydown", (e: KeyboardEvent) => {
 
 add_cart.addEventListener("click", () => {
 	addToCart();
-	// cart_button.classList.remove("disable_cursor");
-	// cart_button.style.borderBottom = "";
 });
 
 const addToCart = (): void => {
@@ -1135,14 +989,6 @@ const addToCart = (): void => {
 		localStorage.setItem("cart", JSON.stringify(cart));
 		localStorage.setItem("current_products", JSON.stringify(current_products));
 	}
-
-	// } catch (error) {
-	// 	const err = document.createElement("div");
-	// 	err.textContent = "Something went wrong. Please, refresh the page";
-	// 	err.style.fontSize = "100px";
-	// 	backdrop.appendChild(err);
-	// 	console.log(error);
-	// }
 
 	count++;
 	localStorage.setItem("cartCount", count.toString());
@@ -1273,14 +1119,6 @@ const updateCart = (): void => {
 				prices_block.appendChild(discount_price); // Only show the original price if no discount
 			}
 
-			// product_price.textContent = `$${productCustomization.totalPrice.toFixed(
-			// 	2
-			// )}`;
-
-			// totalCartPrice += productCustomization.totalPrice;
-
-			// console.log(current_product);
-
 			trash.addEventListener("click", () => {
 				cartProducts.splice(i, 1);
 				current_products.splice(i, 1);
@@ -1294,28 +1132,9 @@ const updateCart = (): void => {
 				let count = parseInt(localStorage.getItem("cartCount") || "0");
 				count = Math.max(0, count - 1);
 				localStorage.setItem("cartCount", count.toString());
-				// const indexToRemove = cartProducts.findIndex(
-				// 	(p) => p.id === product.id
-				// );
-
-				// if (indexToRemove !== -1) {
-				// 	cartProducts.splice(indexToRemove, 1);
-				// 	// current_products.splice(i, 1)
-				// 	localStorage.setItem("cart", JSON.stringify(cartProducts));
-
-				// 	let count = parseInt(localStorage.getItem("cartCount") || "0");
-				// 	count = Math.max(0, count - 1);
-				// 	localStorage.setItem("cartCount", count.toString());
 
 				updateCartButtonVisibility();
 				updateCart();
-				// }
-
-				// const updatedCart = cartProducts.filter((p) => p.id !== product.id);
-				// localStorage.setItem("cart", JSON.stringify(updatedCart));
-
-				// const newCount = updateCart.length;
-				// localStorage.setItem("cartCount", newCount.toString());
 			});
 
 			const product_info_div = document.createElement("div");
@@ -1350,12 +1169,10 @@ const updateCart = (): void => {
 
 			productRow.appendChild(productInfo);
 			productRow.appendChild(prices_block);
-			// productRow.appendChild(product_price);
 
 			cart_products?.appendChild(productRow);
 		});
 
-		// cart_total_price.textContent = `$${totalCartPrice.toFixed(2)}`;
 		// Update total price display
 		if (isLoggedIn() && totalCartPrice < totalCartOriginalPrice) {
 			cart_total_price.innerHTML = `<p class="total_original_price">$${totalCartOriginalPrice.toFixed(
@@ -1369,9 +1186,12 @@ const updateCart = (): void => {
 			if (!confirm_order) {
 				// Create Confirm button if it doesn't exist
 				const newConfirmOrder = document.createElement("div");
+				const orderConfirmResponse = document.createElement("p");
 				newConfirmOrder.textContent = "Confirm";
 				newConfirmOrder.className = "confirm_order";
+				orderConfirmResponse.className = "confirm_order_response";
 				main.appendChild(newConfirmOrder);
+				main.appendChild(orderConfirmResponse);
 			}
 		} else {
 			// Remove Confirm button if it exists
@@ -1386,6 +1206,7 @@ const updateCart = (): void => {
 		}
 		// cart_total_price.textContent = "$0.00";
 	}
+	cartTotalPrice = totalCartPrice;
 	updateCartButtonVisibility();
 };
 
@@ -1492,10 +1313,6 @@ cart_button.addEventListener("click", async () => {
 		div3.className = "address";
 		div4.className = "pay_by";
 
-		// const confirm_order = document.createElement("div");
-		// confirm_order.textContent = "Confirm";
-		// confirm_order.className = "confirm_order";
-
 		div3.appendChild(p3);
 		div3.appendChild(p4);
 		div4.appendChild(p5);
@@ -1586,9 +1403,6 @@ document.addEventListener("click", (e: Event) => {
 			input.style.border = "1px solid red";
 			icon.style.display = "inline-block";
 			error.textContent = message;
-			// input.setAttribute("aria-invalid", "true");
-			// input.setAttribute("aria-describedby", error.className);
-			// icon.setAttribute("aria-hidden", "true"); // Icon is decorative
 		};
 
 		const clearInputError = (
@@ -1670,7 +1484,6 @@ document.addEventListener("click", (e: Event) => {
 			if (!isLoginValid || !isPasswordValid) return;
 
 			auth_error.textContent = "";
-			// sign_in.classList.add("loading");
 			sign_in.textContent = "Signing In...";
 
 			try {
@@ -1697,10 +1510,10 @@ document.addEventListener("click", (e: Event) => {
 				updateCartButtonVisibility();
 				menu_link.click();
 			} catch (error) {
+				console.log(error);
 				auth_error.textContent = "Incorrect login or password";
 				auth_error.style.color = "red";
 			} finally {
-				// sign_in.classList.remove("loading");
 				sign_in.textContent = "Sign In";
 			}
 		});
@@ -1829,9 +1642,6 @@ document.addEventListener("click", (e: Event) => {
 		) as HTMLInputElement;
 		const input_cash = main.querySelector(
 			'input[name="payment"][value="cash"]'
-		) as HTMLInputElement;
-		const input_card = main.querySelector(
-			'input[name="payment"][value="card"]'
 		) as HTMLInputElement;
 		const login_error = main.querySelector(".login_error") as HTMLElement;
 		const password_error = main.querySelector(".password_error") as HTMLElement;
@@ -2164,7 +1974,6 @@ document.addEventListener("click", (e: Event) => {
 			}
 
 			register_error.textContent = "";
-			register.classList.add("loading");
 			register.textContent = "Registering...";
 
 			try {
@@ -2194,15 +2003,6 @@ document.addEventListener("click", (e: Event) => {
 
 				register_error.textContent = "Registration was succesful!";
 				register_error.style.color = "green";
-
-				// const userAddress = {
-				// 	city: select_city.value,
-				// 	street: select_street.value,
-				// 	houseNumber: houseNumberValue,
-				// };
-
-				// localStorage.setItem("paymentMethod", paymentMethod);
-				// localStorage.setItem("address", JSON.stringify(userAddress));
 			} catch (error: unknown) {
 				let errorMessage = "Registration failed";
 				if (error instanceof Error) {
@@ -2217,15 +2017,75 @@ document.addEventListener("click", (e: Event) => {
 				register_error.textContent = errorMessage;
 				register_error.style.color = "red";
 			} finally {
-				register.classList.remove("loading");
 				register.textContent = "Register";
 			}
 		});
+	} else if (target.classList.contains("confirm_order")) {
+		const order_confirm_response = document.querySelector(
+			".confirm_order_response"
+		) as HTMLElement;
+
+		const cart_total_products: {
+			items: {
+				productId: number;
+				size: SizeKey;
+				additives: string[];
+				quantity: number;
+			}[];
+			totalPrice: number;
+		} = {
+			items: [],
+			totalPrice: 0,
+		};
+
+		current_products.forEach((product) => {
+			cart_total_products.items.push({
+				productId: parseInt(product.id),
+				size: product.size,
+				additives: product.addsTypes,
+				quantity: 1,
+			});
+		});
+
+		cart_total_products.totalPrice = cartTotalPrice;
+
+		const postOrder = async () => {
+			try {
+				const response = await fetch(
+					"https://6kt29kkeub.execute-api.eu-central-1.amazonaws.com/orders/confirm",
+					{
+						method: "POST",
+						headers: { "Content-Type": "application/json" },
+						body: JSON.stringify(cart_total_products),
+					}
+				);
+
+				if (!response.ok) {
+					const errorData = await response.json();
+					throw new Error(errorData.message || "Order failed");
+				}
+				order_confirm_response.textContent =
+					"Thank you for your order! Our manager will contact you shortly.";
+			} catch (error: unknown) {
+				let errorMessage = "Order failed";
+				if (error instanceof Error) {
+					errorMessage = error.message;
+				} else if (
+					typeof error === "object" &&
+					error !== null &&
+					"message" in error
+				) {
+					errorMessage = (error as { message: string }).message;
+				}
+				order_confirm_response.textContent = errorMessage;
+				order_confirm_response.style.color = "red";
+			}
+		};
+		postOrder();
 	}
 });
 
 document.addEventListener("DOMContentLoaded", () => {
-	// const cart = JSON.parse(localStorage.getItem("cart") ?? "[]");
 	const storedCurrentProducts = localStorage.getItem("current_products");
 	if (storedCurrentProducts) {
 		current_products.splice(
@@ -2236,10 +2096,5 @@ document.addEventListener("DOMContentLoaded", () => {
 	}
 
 	updateCartButtonVisibility();
-	// if (cart.length > 0) {
-	// 	cart_button.style.display = "inline";
-	// 	const cart_number = document.querySelector(".cart_number") as HTMLElement;
-	// 	cart_number.textContent = cart.length.toString();
-	// }
 	getFavorites(); //initial
 });
