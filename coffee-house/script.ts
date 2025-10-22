@@ -1532,7 +1532,7 @@ document.addEventListener("click", (e: Event) => {
 				const access_token = data.data.access_token;
 				localStorage.setItem("jwt", access_token);
 				updateCartButtonVisibility();
-				setTimeout(() => menu_link.click(), 1500);
+				setTimeout(() => menu_link.click(), 500);
 			} catch (error) {
 				console.log(error);
 				auth_error.textContent = "Incorrect login or password";
@@ -2027,7 +2027,7 @@ document.addEventListener("click", (e: Event) => {
 
 				register_error.textContent = "Registration was succesful!";
 				register_error.style.color = "green";
-				setTimeout(() => menu_link.click(), 1500);
+				setTimeout(() => menu_link.click(), 500);
 			} catch (error: unknown) {
 				let errorMessage = "Registration failed";
 				if (error instanceof Error) {
