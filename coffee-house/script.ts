@@ -1532,7 +1532,7 @@ document.addEventListener("click", (e: Event) => {
 				const access_token = data.data.access_token;
 				localStorage.setItem("jwt", access_token);
 				updateCartButtonVisibility();
-				menu_link.click();
+				setTimeout(() => menu_link.click(), 1500);
 			} catch (error) {
 				console.log(error);
 				auth_error.textContent = "Incorrect login or password";
@@ -2027,6 +2027,7 @@ document.addEventListener("click", (e: Event) => {
 
 				register_error.textContent = "Registration was succesful!";
 				register_error.style.color = "green";
+				setTimeout(() => menu_link.click(), 1500);
 			} catch (error: unknown) {
 				let errorMessage = "Registration failed";
 				if (error instanceof Error) {
@@ -2090,6 +2091,7 @@ document.addEventListener("click", (e: Event) => {
 				}
 				order_confirm_response.textContent =
 					"Thank you for your order! Our manager will contact you shortly.";
+				order_confirm_response.style.color = "#403f3d";
 			} catch (error: unknown) {
 				let errorMessage = "Order failed";
 				if (error instanceof Error) {
@@ -2101,6 +2103,7 @@ document.addEventListener("click", (e: Event) => {
 				) {
 					errorMessage = (error as { message: string }).message;
 				}
+				alert("Something went wrong. Please, try again");
 				order_confirm_response.textContent = errorMessage;
 				order_confirm_response.style.color = "red";
 			}
