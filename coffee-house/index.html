@@ -33,6 +33,7 @@
 				</nav>
 				<div class="menu_cart">
 					<a class="cart_button">
+						<span class="total_discount"></span>
 						<i class="fa-solid fa-cart-shopping"></i>
 						<span class="cart_number"></span>
 					</a>
@@ -59,6 +60,14 @@
 							<a class="burger_menu_link"
 								>Menu <i class="fa-solid fa-mug-hot"></i
 							></a>
+						</li>
+						<li class="burger_menu_cart_button">
+							<a class="cart_button burger_menu_link">
+								<span class="total_discount"></span>
+								Cart
+								<i class="fa-solid fa-cart-shopping"></i>
+								<span class="cart_number"></span>
+							</a>
 						</li>
 					</ul>
 				</nav>
@@ -204,15 +213,10 @@
 				<div class="additives_block"></div>
 				<div class="total_price_block">
 					<p class="total">Total:</p>
-					<p class="total_price"></p>
-				</div>
-				<div class="warning">
-					<i class="fa-solid fa-circle-info"></i>
-					<p>
-						The cost is not final. Download our mobile app to see the final
-						price and place your order. Earn loyalty points and enjoy your
-						favorite coffee with up to 20% discount.
-					</p>
+					<div class="prices">
+						<p class="total_original_price"></p>
+						<p class="total_discounted_price"></p>
+					</div>
 				</div>
 			</div>
 			<div class="add_cart">Add to cart</div>
