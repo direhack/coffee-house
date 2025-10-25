@@ -2,6 +2,9 @@
 const main = document.querySelector("main") as HTMLElement;
 const header = document.querySelector("header") as HTMLElement;
 const cart_button = document.querySelector(".cart_button") as HTMLElement;
+const burger_menu_cart_button = document.querySelector(
+	".burger_menu_cart_button"
+) as HTMLElement;
 const drink = document.querySelector(".drink") as HTMLElement;
 const slider = document.querySelector(".slider") as HTMLElement;
 const three_lines = document.querySelector(".three-lines") as HTMLElement;
@@ -38,11 +41,6 @@ const sizes_block = document.querySelector(".sizes_block") as HTMLElement;
 
 const additives_block = document.querySelector(
 	".additives_block"
-) as HTMLElement;
-
-// Other modal elements
-const total_price = document.querySelector(
-	".modal .total_price"
 ) as HTMLElement;
 
 enum ProductCategory {
@@ -111,6 +109,7 @@ let startX: number = 0; // touch start X coordinate
 let endX: number = 0; // touch end X coordinate
 let count: number = 0;
 let cartTotalPrice: number = 0;
+let totalDiscount: number = 0;
 
 let data: Product[] = []; // fetched product data (type `any` for now)
 let fullData: Product[] = [];
@@ -479,7 +478,8 @@ menu_link.addEventListener("click", async (e: Event) => {
 	menu_link.style.borderBottom = "2px solid #403f3d";
 	cart_button.classList.remove("disable_cursor");
 	cart_button.style.borderBottom = "";
-	updateCartButtonVisibility();
+
+	updateCartButtonVisibility(PageView.MENU);
 
 	cross.click();
 
@@ -534,8 +534,6 @@ menu_link.addEventListener("click", async (e: Event) => {
 		content.innerHTML = "";
 		current_product.type = category as ProductCategory;
 		filteredData = fullData.filter((el) => el.category === category);
-
-		console.log(fullData);
 
 		const srcMap = {
 			coffee: productImages.coffee,
@@ -654,16 +652,8 @@ menu_link.addEventListener("click", async (e: Event) => {
 				createSizes();
 				createAdditives();
 
-				if (isLoggedIn() && product.sizes.s.discountPrice !== undefined) {
-					total_price.textContent = product.discountPrice
-						? `$${product.discountPrice}`
-						: `$${product.sizes.s.discountPrice}`;
-				} else {
-					total_price.textContent = product.price ? `$${product.price}` : "";
-				}
-
-				current_product.totalPrice = parseFloat(product.price);
 				current_product.productSize = product.sizes[current_product.size].size;
+				updateTotal();
 			});
 		});
 	});
@@ -830,9 +820,8 @@ links.forEach((link, i) => {
 			if (i === 0) cross.click();
 			menu_link.style.borderBottom = "";
 			menu_link.classList.remove("disable_cursor");
-
-			updateCartButtonVisibility();
-
+			cart_button.style.display = "none";
+			burger_menu_cart_button.style.display = "none";
 			cart_button.style.borderBottom = "";
 			cart_button.classList.remove("disable_cursor");
 			main.classList.remove(...Object.values(PageView));
@@ -856,7 +845,8 @@ burger_menu_links.forEach((link, i) => {
 			menu_link.classList.remove("disable_cursor");
 			cart_button.style.borderBottom = "";
 			cart_button.classList.remove("disable_cursor");
-			updateCartButtonVisibility();
+			cart_button.style.display = "none";
+			burger_menu_cart_button.style.display = "none";
 			main.classList.remove(...Object.values(PageView));
 			main.classList.add(PageView.HOME);
 			main.replaceChildren(...backup);
@@ -926,26 +916,60 @@ function closeMenu(): void {
 }
 
 const updateTotal = (): void => {
-	const sizeAdd = parseFloat(
-		isLoggedIn() &&
-			product?.sizes?.[current_product.size]?.["discountPrice"] !== undefined
-			? product?.sizes?.[current_product.size]?.["discountPrice"]
-			: product?.sizes?.[current_product.size]?.["price"] ?? "0"
+	// Calculate original price (non-discounted)
+	const sizeOriginalPrice = parseFloat(
+		product?.sizes?.[current_product.size]?.price ?? "0"
 	);
-	const addsSum = current_product.adds.reduce(
-		(s, i) =>
-			s +
-			parseFloat(
-				isLoggedIn() && product?.additives?.[i]?.["discountPrice"] !== undefined
-					? product?.additives?.[i]?.["discountPrice"]
-					: product?.additives?.[i]?.["price"] ?? "0"
-			),
+	const additivesOriginalPrice = current_product.adds.reduce(
+		(sum, i) => sum + parseFloat(product?.additives?.[i]?.price ?? "0"),
 		0
 	);
+	const originalTotal = sizeOriginalPrice + additivesOriginalPrice;
 
-	const total = sizeAdd + addsSum;
-	total_price.textContent = `$${total.toFixed(2)}`;
-	current_product.totalPrice = total;
+	// Calculate discounted price (if logged in and discounts are available)
+	const sizeDiscountPrice = isLoggedIn()
+		? parseFloat(
+				product?.sizes?.[current_product.size]?.discountPrice ??
+					product?.sizes?.[current_product.size]?.price ??
+					"0"
+		  )
+		: sizeOriginalPrice;
+	const additivesDiscountPrice = isLoggedIn()
+		? current_product.adds.reduce(
+				(sum, i) =>
+					sum +
+					parseFloat(
+						product?.additives?.[i]?.discountPrice ??
+							product?.additives?.[i]?.price ??
+							"0"
+					),
+				0
+		  )
+		: additivesOriginalPrice;
+	const discountedTotal = sizeDiscountPrice + additivesDiscountPrice;
+
+	// Update the modal's total price display
+	const totalOriginalPriceEl = document.querySelector(
+		".modal .total_original_price"
+	) as HTMLElement;
+	const totalDiscountedPriceEl = document.querySelector(
+		".modal .total_discounted_price"
+	) as HTMLElement;
+
+	if (isLoggedIn() && discountedTotal < originalTotal) {
+		// Show both original (strikethrough) and discounted prices
+		totalOriginalPriceEl.textContent = `$${originalTotal.toFixed(2)}`;
+		totalDiscountedPriceEl.textContent = `$${discountedTotal.toFixed(2)}`;
+		totalOriginalPriceEl.style.display = "inline";
+	} else {
+		// Show only the original price (no discount available or not logged in)
+		totalOriginalPriceEl.textContent = "";
+		totalOriginalPriceEl.style.display = "none";
+		totalDiscountedPriceEl.textContent = `$${originalTotal.toFixed(2)}`;
+	}
+
+	// Update current_product totalPrice (reflects the price the user will pay)
+	current_product.totalPrice = discountedTotal;
 };
 
 const additiveFilter = (num: AdditiveIndex, additiveName: string): void => {
@@ -1015,7 +1039,6 @@ const addToCart = (): void => {
 	if (product) {
 		cart.push(product);
 		current_products.push({ ...current_product, quantity: 1 });
-		console.log(current_products);
 		localStorage.setItem("cart", JSON.stringify(cart));
 		localStorage.setItem("current_products", JSON.stringify(current_products));
 	}
@@ -1027,17 +1050,41 @@ const addToCart = (): void => {
 	close.click();
 };
 
-const updateCartButtonVisibility = (): void => {
+const updateCartButtonVisibility = (view: string = ""): void => {
 	const cart = JSON.parse(localStorage.getItem("cart") ?? "[]");
+
 	cart_button.style.display =
-		isLoggedIn() || cart.length > 0 ? "inline" : "none";
+		isLoggedIn() ||
+		cart.length > 0 ||
+		(main.classList.contains(PageView.CART) && !view)
+			? "inline"
+			: "none";
+
+	burger_menu_cart_button.style.display =
+		isLoggedIn() ||
+		cart.length > 0 ||
+		(main.classList.contains(PageView.CART) && !view)
+			? "inline"
+			: "none";
 	updateCartNumber();
 };
 
 const updateCartNumber = (): void => {
-	const cart_number = document.querySelector(".cart_number") as HTMLElement;
+	const cart_number = document.querySelectorAll(
+		".cart_number"
+	) as NodeListOf<HTMLElement>;
+	const cart_total_discount = document.querySelectorAll(
+		".total_discount"
+	) as NodeListOf<HTMLElement>;
 	count = parseInt(localStorage.getItem("cartCount") || "0");
-	cart_number.textContent = count > 0 ? count.toString() : "";
+	cart_number.forEach(
+		(number) => (number.textContent = count > 0 ? count.toString() : "")
+	);
+	cart_total_discount.forEach(
+		(discount) =>
+			(discount.textContent =
+				totalDiscount > 0 ? `$${totalDiscount.toFixed(2)}` : "")
+	);
 };
 
 const updateCart = (): void => {
@@ -1050,6 +1097,7 @@ const updateCart = (): void => {
 	const cart = localStorage.getItem("cart");
 	let totalCartPrice = 0;
 	let totalCartOriginalPrice = 0;
+	totalDiscount = 0;
 
 	if (cart) {
 		const cartProducts: Product[] = JSON.parse(cart);
@@ -1130,6 +1178,7 @@ const updateCart = (): void => {
 
 			totalCartOriginalPrice += productOriginalPrice;
 			totalCartPrice += productDiscountPrice;
+			totalDiscount = totalCartOriginalPrice - totalCartPrice;
 
 			// Display prices
 			original_price.textContent = `$${productOriginalPrice.toFixed(2)}`;
@@ -1233,6 +1282,8 @@ const updateCart = (): void => {
 	cartTotalPrice = totalCartPrice;
 	updateCartButtonVisibility();
 };
+
+burger_menu_cart_button.addEventListener("click", () => cart_button.click());
 
 cart_button.addEventListener("click", async () => {
 	main.classList.remove(...Object.values(PageView));
@@ -2122,6 +2173,6 @@ document.addEventListener("DOMContentLoaded", () => {
 		);
 	}
 
-	updateCartButtonVisibility();
+	// updateCartButtonVisibility();
 	getFavorites(); //initial
 });
