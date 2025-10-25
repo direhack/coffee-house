@@ -32,6 +32,7 @@ header {
 	padding-top: 20px;
 	padding-bottom: 20px;
 	.menu_cart {
+		// display: none;
 		// display: flex;
 		// justify-content: center;
 		// align-items: center;
@@ -42,9 +43,14 @@ header {
 				cursor: pointer;
 			}
 			@include tablet {
-				position: absolute;
-				right: 70px;
-				top: 40px;
+				display: none !important;
+				// position: absolute;
+				// right: 70px;
+				// top: 40px;
+			}
+			.total_discount {
+				text-decoration: line-through;
+				opacity: 0.5;
 			}
 		}
 	}
@@ -145,6 +151,13 @@ header {
 		li {
 			&:last-child {
 				margin-top: 30px;
+			}
+		}
+		.burger_menu_cart_button {
+			display: none;
+			.total_discount {
+				text-decoration: line-through;
+				opacity: 0.5;
 			}
 		}
 	}
@@ -353,8 +366,6 @@ a {
 					&:hover {
 						cursor: pointer;
 					}
-				}
-				img {
 				}
 				.drink-name {
 					@include heading-3;
@@ -1081,8 +1092,6 @@ a {
 		min-height: 15px;
 		font-weight: bold;
 	}
-	.auth_error {
-	}
 }
 .register {
 	display: flex;
@@ -1141,30 +1150,6 @@ a {
 		border-radius: 12px;
 		width: 200px;
 		height: 40px;
-	}
-	.label_login {
-		.input_login {
-		}
-	}
-	.label_password {
-		.input_password {
-		}
-	}
-	.label_confirm_password {
-		.input_confirm_password {
-		}
-	}
-	.label_city {
-		.input_city {
-		}
-	}
-	.label_street {
-		.input_street {
-		}
-	}
-	.label_house_number {
-		.input_house_number {
-		}
 	}
 	.pay_by {
 		display: flex;
@@ -1247,7 +1232,7 @@ a {
 	z-index: 10000;
 	background-color: $light_text;
 	width: 800px;
-	height: 574px;
+	height: 554px;
 	@media (max-width: 800px) {
 		width: 90%;
 		height: 700px;
@@ -1297,6 +1282,10 @@ a {
 			background-color: $dark_border;
 			color: $light_text;
 			cursor: pointer;
+		}
+		@media (max-width: 700px) {
+			top: 65px;
+			right: 10px;
 		}
 	}
 	.modal_photo {
@@ -1495,28 +1484,25 @@ a {
 		.total_price_block {
 			display: flex;
 			justify-content: space-between;
-			border-bottom: 2px solid $light_border;
 			margin-right: 20px;
 			.total {
 				margin-left: 20px;
 				@include heading-3;
 				color: $dark_text;
 			}
-			.total_price {
+			.prices {
+				display: flex;
+			}
+			.total_original_price {
 				@include heading-3;
 				color: $dark_text;
+				text-decoration: line-through;
+				opacity: 0.5;
+				margin-right: 10px;
 			}
-		}
-		.warning {
-			@include caption;
-			color: $dark_text;
-			display: flex;
-			align-items: center;
-			text-align: left;
-			gap: 12px;
-			margin-right: 20px;
-			@media (max-width: 600px) {
-				margin-left: 10px;
+			.total_discounted_price {
+				@include heading-3;
+				color: $dark_text;
 			}
 		}
 		.tooltip {
@@ -1556,11 +1542,18 @@ a {
 		border: 1px solid $dark_border;
 		padding: 15px 219px;
 		border-radius: 30px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
 		@media (max-width: 800px) {
 			padding: 15px 180px;
 		}
 		@media (max-width: 700px) {
-			padding: 15px 150px;
+			padding: 0;
+			// padding: 15px 150px;
+			width: 350px;
+			height: 50px;
+
 			left: 50%;
 			transform: translateX(-50%);
 			display: flex;
@@ -1646,10 +1639,6 @@ a {
 		background-color: $body !important;
 		color: $dark_text !important;
 	}
-}
-.loading {
-	// cursor: wait !important;
-	// background-color: #666 !important;
 }
 
 .fa-rotate-right {
