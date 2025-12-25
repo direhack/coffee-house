@@ -209,7 +209,7 @@ drink.addEventListener("pointerenter", pause);
 );
 
 drink.addEventListener("animationend", (e) => {
-	if ((e.animationName = "slideInHoldOut")) {
+	if ((e.animationName === "slideInHoldOut")) {
 		drink.style.transform = "none";
 	}
 });
