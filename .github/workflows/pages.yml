@@ -1,7 +1,7 @@
 name: Deploy Coffee House to Pages
 on:
   push:
-    branches: [ gh-pages ]
+    branches: [ coffee-house ]
 permissions:
   contents: read
   pages: write
