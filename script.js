@@ -145,6 +145,16 @@ function playCycle(direction = "left") {
 	drink.style.animation = `${base} ${dir} forwards`;
 }
 
+function restartCycle(direction) {
+	clearTimeout(timer);
+	timer = null;
+	remaining = INTERVAL;
+
+	render();
+	playCycle(direction);
+	schedule(INTERVAL);
+}
+
 function render() {
 	if (!isHome()) return;
 	drink.innerHTML = "";
@@ -215,19 +225,13 @@ drink.addEventListener("animationend", (e) => {
 });
 
 left_button.addEventListener("click", () => {
-	pause();
 	current = current > 0 ? current - 1 : 2;
-	changeCoffee(false, "left");
-	remaining = INTERVAL;
-	resume();
+	restartCycle("left");
 });
 
 right_button.addEventListener("click", () => {
-	pause();
 	current = current < 2 ? current + 1 : 0;
-	changeCoffee(false, "right");
-	remaining = INTERVAL;
-	resume();
+	restartCycle("right");
 });
 
 slider.addEventListener("touchstart", (e) => {
